@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Agenda tareas semanales</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Karla:wght@400;500;700;800&display=swap">
+<style>
+:root{
+  --bg:#f3f1ec;
+  --surface:#ffffff;
+  --surface-2:#eae6dc;
+  --ink:#232420;
+  --ink-soft:#6a6459;
+  --line:#dfdace;
+  --line2:#e4dfd3;
+  --accent:#2f5d5a;
+  --accent-ink:#ffffff;
+  --accent-soft:#dbe8e6;
+  --deporte:#2f5d5a;
+  --deporte-soft:#dbe8e6;
+  --estudio:#9a6a24;
+  --estudio-soft:#f1e3cd;
+  --creativo:#6b4570;
+  --creativo-soft:#e8dcec;
+  --lectura:#3f5a78;
+  --lectura-soft:#dde6ee;
+  --danger:#a3402f;
+  --danger-soft:#f3ded9;
+  --shadow: 0 1px 2px rgba(35,36,32,.07), 0 6px 16px rgba(35,36,32,.06);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#181a17;
+    --surface:#232420;
+    --surface-2:#2b2c27;
+    --ink:#f1efe8;
+    --ink-soft:#b3ada0;
+    --line:#3a3b35;
+    --line2:#34352f;
+    --accent:#83bab2;
+    --accent-ink:#12211f;
+    --accent-soft:#28403c;
+    --deporte:#83bab2;
+    --deporte-soft:#28403c;
+    --estudio:#e0ab5f;
+    --estudio-soft:#4a3a1f;
+    --creativo:#c79fd0;
+    --creativo-soft:#3c2f42;
+    --lectura:#8fb0d6;
+    --lectura-soft:#28374a;
+    --danger:#e2836f;
+    --danger-soft:#452a24;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181a17;
+  --surface:#232420;
+  --surface-2:#2b2c27;
+  --ink:#f1efe8;
+  --ink-soft:#b3ada0;
+  --line:#3a3b35;
+  --line2:#34352f;
+  --accent:#83bab2;
+  --accent-ink:#12211f;
+  --accent-soft:#28403c;
+  --deporte:#83bab2;
+  --deporte-soft:#28403c;
+  --estudio:#e0ab5f;
+  --estudio-soft:#4a3a1f;
+  --creativo:#c79fd0;
+  --creativo-soft:#3c2f42;
+  --lectura:#8fb0d6;
+  --lectura-soft:#28374a;
+  --danger:#e2836f;
+  --danger-soft:#452a24;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Karla',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  padding-inline:16px;
+  padding-block:24px 48px;
+  max-width:640px;
+  margin-inline:auto;
+}
+h1,h2,h3{font-family:'Zilla Slab',Georgia,'Times New Roman',serif; margin:0; text-wrap:balance}
+header.top{margin-bottom:14px}
+header.top h1{font-size:1.7rem; font-weight:600; letter-spacing:-.01em}
+header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
+.viewnav{display:flex; gap:6px; margin-bottom:16px}
+.viewnav button{
+  flex:1; font:inherit; font-weight:700; font-size:.8rem; color:var(--ink-soft);
+  background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  padding:10px 6px; cursor:pointer; text-align:center;
+}
+.viewnav button[aria-selected="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.sectiontitle{font-size:1.25rem; margin:4px 0 14px}
+.weekbar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin-bottom:14px; padding:10px 14px; background:var(--surface); border:1px solid var(--line);
+  border-radius:12px; box-shadow:var(--shadow); flex-wrap:wrap;
+}
+.weekbar .wk{font-size:.85rem; color:var(--ink-soft)}
+.weekbar button{
+  font:inherit; font-size:.8rem; background:none; border:1px solid var(--line); color:var(--ink-soft);
+  padding:6px 10px; border-radius:8px; cursor:pointer;
+}
+.weekbar button:hover{border-color:var(--accent); color:var(--accent)}
+.tabs{
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:14px;
+}
+.tab{
+  font:inherit; font-size:.85rem; font-weight:600; color:var(--ink-soft); text-align:center;
+  background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:9px 8px; cursor:pointer; white-space:nowrap;
+}
+.tab .n{display:block; font-weight:400; font-size:.72rem; opacity:.75; margin-top:1px}
+.tab[aria-selected="true"]{background:var(--accent); border-color:var(--accent); color:var(--accent-ink)}
+.tab.today:not([aria-selected="true"]){box-shadow:inset 0 0 0 1.5px var(--accent)}
+.daysummary{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; gap:10px; flex-wrap:wrap}
+.daysummary h2{font-size:1.25rem}
+.daysummary .tot{font-size:.85rem; color:var(--ink-soft)}
+.list{display:flex; flex-direction:column; gap:8px}
+.entry{
+  display:flex; align-items:flex-start; gap:12px; background:var(--surface); border:1px solid var(--line);
+  border-radius:12px; padding:12px 12px; box-shadow:var(--shadow);
+}
+.entry.done{opacity:.6}
+.entry .check{flex:0 0 auto; padding-top:2px}
+.entry .check input{
+  appearance:none; width:24px; height:24px; border-radius:7px; border:1.5px solid var(--line);
+  background:var(--surface-2); cursor:pointer; position:relative; display:block;
+}
+.entry .check input:checked{background:var(--accent); border-color:var(--accent)}
+.entry .check input:checked::after{
+  content:""; position:absolute; left:7px; top:3px; width:6px; height:11px;
+  border:solid var(--accent-ink); border-width:0 2.5px 2.5px 0; transform:rotate(45deg);
+}
+.entry .body{flex:1; min-width:0}
+.entry .row1{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.entry .time{font-variant-numeric:tabular-nums; font-size:.82rem; color:var(--ink-soft); white-space:nowrap}
+.entry .name{font-weight:700; font-size:1rem; margin-top:2px}
+.entry.done .name{text-decoration:line-through; text-decoration-color:var(--ink-soft)}
+.entry .note-text{font-size:.92rem; line-height:1.45; margin-top:4px; white-space:pre-wrap}
+.entry audio{width:100%; margin-top:6px; height:36px}
+.chip{
+  font-size:.68rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
+  padding:3px 8px; border-radius:999px; white-space:nowrap;
+}
+.entry .actions{flex:0 0 auto; display:flex; gap:4px}
+.iconbtn{
+  border:none; background:none; color:var(--ink-soft); cursor:pointer; padding:6px; border-radius:8px;
+  font-size:.95rem; line-height:1;
+}
+.iconbtn:hover{background:var(--surface-2); color:var(--ink)}
+.addbtn{
+  margin-top:12px; width:100%; font:inherit; font-weight:700; font-size:.88rem; color:var(--accent);
+  background:var(--accent-soft); border:1px dashed var(--accent); border-radius:12px; padding:12px;
+  cursor:pointer;
+}
+.addbtn:hover{filter:brightness(0.97)}
+.empty{color:var(--ink-soft); font-size:.9rem; padding:18px 4px}
+.formcard{
+  margin-top:14px; background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:16px; box-shadow:var(--shadow);
+}
+.formcard h3{font-size:1.02rem; margin-bottom:12px}
+.field{margin-bottom:12px}
+.field label{display:block; font-size:.78rem; font-weight:700; color:var(--ink-soft); margin-bottom:5px; text-transform:uppercase; letter-spacing:.02em}
+.field input[type=text], .field select, .field input[type=time], .field input[type=date], .field textarea{
+  width:100%; font:inherit; font-size:.95rem; padding:9px 10px; border-radius:9px; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink);
+}
+.field textarea{resize:vertical; min-height:90px}
+.field input[type=color]{width:100%; height:40px; padding:2px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); cursor:pointer}
+.field-row{display:flex; gap:10px}
+.field-row .field{flex:1}
+.formactions{display:flex; gap:8px; margin-top:6px; flex-wrap:wrap}
+.btn{font:inherit; font-weight:700; font-size:.88rem; padding:10px 16px; border-radius:9px; border:1px solid transparent; cursor:pointer}
+.btn.primary{background:var(--accent); color:var(--accent-ink)}
+.btn.ghost{background:none; border-color:var(--line); color:var(--ink)}
+.btn.danger{background:var(--danger-soft); color:var(--danger)}
+.notes-controls{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap}
+.notes-controls .btn{flex:1; min-width:150px}
+.recording-card{
+  display:flex; align-items:center; gap:12px; background:var(--danger-soft); border:1px solid var(--danger);
+  border-radius:12px; padding:14px; margin-bottom:12px;
+}
+.recording-card .dot{width:10px; height:10px; border-radius:50%; background:var(--danger); flex:0 0 auto; animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.recording-card .rlabel{flex:1; font-size:.88rem; color:var(--ink)}
+.recording-card .rt{font-variant-numeric:tabular-nums; font-weight:700; color:var(--danger)}
+.legend{display:flex; gap:10px; flex-wrap:wrap; margin-top:22px; font-size:.75rem; color:var(--ink-soft)}
+.legend-item{display:inline-flex; align-items:center; gap:5px}
+.legend-item i{width:9px; height:9px; border-radius:3px; display:inline-block}
+.catdel{border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:.95rem; line-height:1; padding:0 2px}
+.catdel:hover{color:var(--danger)}
+footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-height:1.5}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script type="application/json" id="state-data">
+{
+  "nextId": 47,
+  "weekKey": null,
+  "done": {},
+  "categories": [],
+  "notes": [],
+  "studies": [],
+  "entries": [
+    {"id":1,"day":"lun","start":"07:00","dur":0.5,"name":"Gimnasia en casa","cat":"deporte"},
+    {"id":2,"day":"lun","start":"07:30","dur":0.5,"name":"Estudio de idiomas","cat":"estudio"},
+    {"id":3,"day":"lun","start":"08:00","dur":3,"name":"Tiro con arco","cat":"deporte"},
+    {"id":4,"day":"lun","start":"11:00","dur":0.5,"name":"Estudio de piano","cat":"estudio"},
+    {"id":5,"day":"lun","start":"11:30","dur":1,"name":"Estudio de fotografía","cat":"estudio"},
+    {"id":6,"day":"lun","start":"12:30","dur":0.5,"name":"Estudio de teatro","cat":"estudio"},
+    {"id":7,"day":"lun","start":"13:00","dur":1,"name":"Escritura","cat":"creativo"},
+    {"id":8,"day":"lun","start":"14:00","dur":1,"name":"Lectura","cat":"lectura"},
+    {"id":9,"day":"lun","start":"15:00","dur":0.5,"name":"Magia","cat":"creativo"},
+
+    {"id":10,"day":"mar","start":"07:00","dur":0.5,"name":"Gimnasia en casa","cat":"deporte"},
+    {"id":11,"day":"mar","start":"07:30","dur":0.5,"name":"Estudio de idiomas","cat":"estudio"},
+    {"id":12,"day":"mar","start":"08:00","dur":0.5,"name":"Estudio de piano","cat":"estudio"},
+    {"id":13,"day":"mar","start":"08:30","dur":1,"name":"Estudio de fotografía","cat":"estudio"},
+    {"id":14,"day":"mar","start":"09:30","dur":0.5,"name":"Estudio de teatro","cat":"estudio"},
+    {"id":15,"day":"mar","start":"10:00","dur":1,"name":"Escritura","cat":"creativo"},
+    {"id":16,"day":"mar","start":"11:00","dur":1,"name":"Lectura","cat":"lectura"},
+    {"id":17,"day":"mar","start":"12:00","dur":0.5,"name":"Magia","cat":"creativo"},
+
+    {"id":18,"day":"mie","start":"07:00","dur":0.5,"name":"Gimnasia en casa","cat":"deporte"},
+    {"id":19,"day":"mie","start":"07:30","dur":0.5,"name":"Estudio de idiomas","cat":"estudio"},
+    {"id":20,"day":"mie","start":"08:00","dur":3,"name":"Tiro con arco","cat":"deporte"},
+    {"id":21,"day":"mie","start":"11:00","dur":0.5,"name":"Estudio de piano","cat":"estudio"},
+    {"id":22,"day":"mie","start":"11:30","dur":1,"name":"Estudio de fotografía","cat":"estudio"},
+    {"id":23,"day":"mie","start":"12:30","dur":0.5,"name":"Estudio de teatro","cat":"estudio"},
+    {"id":24,"day":"mie","start":"13:00","dur":1,"name":"Escritura","cat":"creativo"},
+    {"id":25,"day":"mie","start":"14:00","dur":1,"name":"Lectura","cat":"lectura"},
+    {"id":26,"day":"mie","start":"15:00","dur":0.5,"name":"Magia","cat":"creativo"},
+
+    {"id":27,"day":"jue","start":"07:00","dur":0.5,"name":"Gimnasia en casa","cat":"deporte"},
+    {"id":28,"day":"jue","start":"07:30","dur":1,"name":"Bicicleta","cat":"deporte"},
+    {"id":29,"day":"jue","start":"08:30","dur":0.5,"name":"Estudio de idiomas","cat":"estudio"},
+    {"id":30,"day":"jue","start":"09:00","dur":0.5,"name":"Estudio de piano","cat":"estudio"},
+    {"id":31,"day":"jue","start":"09:30","dur":1,"name":"Estudio de fotografía","cat":"estudio"},
+    {"id":32,"day":"jue","start":"10:30","dur":0.5,"name":"Estudio de teatro","cat":"estudio"},
+    {"id":33,"day":"jue","start":"11:00","dur":1,"name":"Escritura","cat":"creativo"},
+    {"id":34,"day":"jue","start":"12:00","dur":1,"name":"Lectura","cat":"lectura"},
+    {"id":35,"day":"jue","start":"13:00","dur":0.5,"name":"Magia","cat":"creativo"},
+
+    {"id":36,"day":"vie","start":"07:00","dur":0.5,"name":"Gimnasia en casa","cat":"deporte"},
+    {"id":37,"day":"vie","start":"07:30","dur":1,"name":"Bicicleta","cat":"deporte"},
+    {"id":38,"day":"vie","start":"08:30","dur":0.5,"name":"Estudio de idiomas","cat":"estudio"},
+    {"id":39,"day":"vie","start":"09:00","dur":0.5,"name":"Estudio de piano","cat":"estudio"},
+    {"id":40,"day":"vie","start":"09:30","dur":1,"name":"Estudio de fotografía","cat":"estudio"},
+    {"id":41,"day":"vie","start":"10:30","dur":0.5,"name":"Estudio de teatro","cat":"estudio"},
+    {"id":42,"day":"vie","start":"11:00","dur":1,"name":"Escritura","cat":"creativo"},
+    {"id":43,"day":"vie","start":"12:00","dur":1,"name":"Lectura","cat":"lectura"},
+    {"id":44,"day":"vie","start":"13:00","dur":0.5,"name":"Magia","cat":"creativo"},
+
+    {"id":45,"day":"sab","start":"07:00","dur":0.5,"name":"Gimnasia en casa","cat":"deporte"},
+    {"id":46,"day":"sab","start":"07:30","dur":1,"name":"Lectura","cat":"lectura"}
+  ]
+}
+</script>
+
+<script>
+(function(){
+"use strict";
+
+var STORAGE_KEY = "agenda-semanal-state-v2";
+
+var DAYS = [
+  {key:"lun", label:"Lunes"},
+  {key:"mar", label:"Martes"},
+  {key:"mie", label:"Miércoles"},
+  {key:"jue", label:"Jueves"},
+  {key:"vie", label:"Viernes"},
+  {key:"sab", label:"Sábado"}
+];
+var BASE_CATS = [
+  {key:"deporte", label:"Deporte", builtin:true},
+  {key:"estudio", label:"Estudio", builtin:true},
+  {key:"creativo", label:"Creativo", builtin:true},
+  {key:"lectura", label:"Lectura", builtin:true}
+];
+var VIEWS = [
+  {key:"agenda", label:"Agenda"},
+  {key:"notas", label:"Notas"},
+  {key:"estudios", label:"Estudios terminados"}
+];
+
+var STATE = null;
+var currentView = "agenda";
+var selectedDay = null;
+var editingId = null; // null = no form, "new" = adding, number = editing that id
+var noteMode = null; // null | "write" | "recording"
+var studyMode = null; // null | "new" | number
+
+var mediaRecorder = null, mediaStream = null, recordedChunks = [], recordingTimer = null, recordingSeconds = 0;
+
+function loadInitialState(){
+  var stored = null;
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) stored = JSON.parse(raw);
+  }catch(e){ stored = null; }
+
+  var s = stored && stored.entries ? stored : JSON.parse(document.getElementById("state-data").textContent);
+  if(!s.done) s.done = {};
+  if(!s.entries) s.entries = [];
+  if(!s.categories) s.categories = [];
+  if(!s.notes) s.notes = [];
+  if(!s.studies) s.studies = [];
+  if(typeof s.nextId !== "number") s.nextId = 1;
+  return s;
+}
+
+function pad(n){ return (n<10?"0":"")+n; }
+
+var MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+function weekRangeLabel(refDate){
+  var jsDay = refDate.getDay();
+  var offset = (jsDay+6)%7;
+  var monday = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate()-offset);
+  var saturday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+5);
+  if(monday.getMonth()===saturday.getMonth()){
+    return "Semana del "+monday.getDate()+" al "+saturday.getDate()+" de "+MESES[monday.getMonth()];
+  }
+  return "Semana del "+monday.getDate()+" de "+MESES[monday.getMonth()]+" al "+saturday.getDate()+" de "+MESES[saturday.getMonth()];
+}
+
+function isoWeekKey(d){
+  var date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - dayNum + 3);
+  var firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
+  var week = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay()+6)%7)) / 7);
+  return date.getUTCFullYear() + "-W" + pad(week);
+}
+
+function todayDayKey(){
+  var jsDay = new Date().getDay(); // 0 sun .. 6 sat
+  var map = {1:"lun",2:"mar",3:"mie",4:"jue",5:"vie",6:"sab"};
+  return map[jsDay] || null;
+}
+
+function todayISODate(){
+  var d = new Date();
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+}
+
+function fmtDur(h){
+  var totalMin = Math.round(h*60);
+  var hh = Math.floor(totalMin/60), mm = totalMin%60;
+  if(hh && mm) return hh+" h "+mm+" min";
+  if(hh) return hh+" h";
+  return mm+" min";
+}
+
+function fmtElapsed(s){
+  var m = Math.floor(s/60), ss = s%60;
+  return pad(m)+":"+pad(ss);
+}
+
+function fmtNoteDate(iso){
+  var d = new Date(iso);
+  return d.getDate()+" de "+MESES[d.getMonth()]+", "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+
+function fmtStudyDate(dstr){
+  var parts = dstr.split("-");
+  var d = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+  return d.getDate()+" de "+MESES[d.getMonth()]+" de "+d.getFullYear();
+}
+
+function addMinutes(hhmm, mins){
+  var parts = hhmm.split(":");
+  var total = parseInt(parts[0],10)*60 + parseInt(parts[1],10) + mins;
+  total = ((total % 1440)+1440)%1440;
+  return pad(Math.floor(total/60))+":"+pad(total%60);
+}
+
+function entriesForDay(day){
+  return STATE.entries.filter(function(e){return e.day===day;}).sort(function(a,b){
+    return a.start.localeCompare(b.start);
+  });
+}
+
+function dayTotalHours(day){
+  return entriesForDay(day).reduce(function(sum,e){return sum+e.dur;},0);
+}
+
+function esc(str){
+  var d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function hexToRgb(hex){
+  if(!hex) return null;
+  var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if(!m) return null;
+  return {r:parseInt(m[1],16), g:parseInt(m[2],16), b:parseInt(m[3],16)};
+}
+
+function allCategories(){
+  return BASE_CATS.concat(STATE.categories.map(function(c){
+    return {key:c.key, label:c.label, color:c.color, builtin:false};
+  }));
+}
+
+function getCategory(key){
+  var found = allCategories().find(function(c){return c.key===key;});
+  return found || BASE_CATS[0];
+}
+
+function catStyle(cat){
+  if(cat.builtin){
+    return "background:var(--"+cat.key+"-soft);color:var(--"+cat.key+")";
+  }
+  var rgb = hexToRgb(cat.color) || {r:100,g:100,b:100};
+  return "background:rgba("+rgb.r+","+rgb.g+","+rgb.b+",.16);color:"+cat.color+";box-shadow:inset 0 0 0 1px rgba("+rgb.r+","+rgb.g+","+rgb.b+",.35)";
+}
+
+function ensureCurrentWeek(){
+  var wk = isoWeekKey(new Date());
+  if(STATE.weekKey !== wk){
+    STATE.weekKey = wk;
+    STATE.done = {};
+    return true;
+  }
+  return false;
+}
+
+function headerHtml(){
+  var html = '<header class="top">';
+  html += "<h1>Agenda tareas semanales</h1>";
+  html += "<p>"+esc(weekRangeLabel(new Date()))+"</p>";
+  html += "</header>";
+  html += '<nav class="viewnav" role="tablist">';
+  VIEWS.forEach(function(v){
+    html += '<button type="button" role="tab" aria-selected="'+(v.key===currentView)+'" data-action="select-view" data-view="'+v.key+'">'+v.label+"</button>";
+  });
+  html += "</nav>";
+  return html;
+}
+
+function renderAgenda(){
+  var html = "";
+  var todayKey = todayDayKey();
+
+  html += '<div class="weekbar"><span class="wk">Las marcas se guardan automáticamente y se reinician al empezar la semana siguiente</span>'+
+          '<button type="button" data-action="reset-week">Reiniciar marcas</button></div>';
+
+  html += '<nav class="tabs" role="tablist">';
+  DAYS.forEach(function(d){
+    var sel = d.key===selectedDay;
+    var tot = dayTotalHours(d.key);
+    html += '<button type="button" class="tab'+(d.key===todayKey?' today':'')+'" role="tab" aria-selected="'+sel+'" data-action="select-day" data-day="'+d.key+'">'+
+      d.label+'<span class="n">'+fmtDur(tot)+'</span></button>';
+  });
+  html += '</nav>';
+
+  var dayLabel = DAYS.find(function(d){return d.key===selectedDay;}).label;
+  var list = entriesForDay(selectedDay);
+  var doneCount = list.filter(function(e){return !!STATE.done[e.id];}).length;
+
+  html += '<div class="daysummary"><h2>'+dayLabel+'</h2><span class="tot">'+doneCount+' de '+list.length+' hecho · '+fmtDur(dayTotalHours(selectedDay))+' en total</span></div>';
+
+  if(list.length===0){
+    html += '<p class="empty">No hay actividades este día todavía.</p>';
+  } else {
+    html += '<div class="list">';
+    list.forEach(function(e){
+      var done = !!STATE.done[e.id];
+      var end = addMinutes(e.start, Math.round(e.dur*60));
+      var cat = getCategory(e.cat);
+      html += '<div class="entry'+(done?' done':'')+'">';
+      html += '<span class="check"><input type="checkbox" '+(done?'checked':'')+' data-action="toggle" data-id="'+e.id+'" aria-label="Marcar '+esc(e.name)+' como hecho"></span>';
+      html += '<div class="body">';
+      html += '<div class="row1"><span class="time">'+e.start+'–'+end+'</span><span class="chip" style="'+catStyle(cat)+'">'+esc(cat.label)+'</span></div>';
+      html += '<div class="name">'+esc(e.name)+'</div>';
+      html += '</div>';
+      html += '<div class="actions">';
+      html += '<button type="button" class="iconbtn" data-action="edit" data-id="'+e.id+'" aria-label="Editar '+esc(e.name)+'" title="Editar">✏️</button>';
+      html += '<button type="button" class="iconbtn" data-action="delete" data-id="'+e.id+'" aria-label="Eliminar '+esc(e.name)+'" title="Eliminar">🗑️</button>';
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  if(editingId===null){
+    html += '<button type="button" class="addbtn" data-action="add">+ Añadir actividad a '+dayLabel.toLowerCase()+'</button>';
+  } else {
+    var editing = editingId==="new" ? null : STATE.entries.find(function(e){return e.id===editingId;});
+    var f = editing || {day:selectedDay, start:"09:00", dur:0.5, name:"", cat:"deporte"};
+    html += '<form class="formcard" id="entry-form">';
+    html += '<h3>'+(editing?"Editar actividad":"Nueva actividad")+'</h3>';
+    html += '<div class="field"><label for="f-name">Nombre</label><input type="text" id="f-name" value="'+esc(f.name)+'" required maxlength="60" placeholder="Ej. Meditación"></div>';
+    html += '<div class="field-row">';
+    html += '<div class="field"><label for="f-day">Día</label><select id="f-day">';
+    DAYS.forEach(function(d){ html += '<option value="'+d.key+'"'+(d.key===f.day?' selected':'')+'>'+d.label+'</option>'; });
+    html += '</select></div>';
+    html += '<div class="field"><label for="f-cat">Categoría</label><select id="f-cat">';
+    allCategories().forEach(function(c){ html += '<option value="'+c.key+'"'+(c.key===f.cat?' selected':'')+'>'+esc(c.label)+'</option>'; });
+    html += '<option value="__new__">+ Nueva categoría…</option>';
+    html += '</select></div>';
+    html += '</div>';
+    html += '<div class="field-row" id="new-cat-fields" hidden>';
+    html += '<div class="field"><label for="f-newcat-name">Nombre de la categoría</label><input type="text" id="f-newcat-name" maxlength="24" placeholder="Ej. Voluntariado"></div>';
+    html += '<div class="field" style="max-width:100px"><label for="f-newcat-color">Color</label><input type="color" id="f-newcat-color" value="#4a6fa5"></div>';
+    html += '</div>';
+    html += '<div class="field-row">';
+    html += '<div class="field"><label for="f-start">Hora inicio</label><input type="time" id="f-start" step="900" value="'+f.start+'"></div>';
+    html += '<div class="field"><label for="f-dur">Duración</label><select id="f-dur">';
+    [0.25,0.5,0.75,1,1.5,2,2.5,3,3.5,4].forEach(function(h){
+      html += '<option value="'+h+'"'+(h===f.dur?' selected':'')+'>'+fmtDur(h)+'</option>';
+    });
+    html += '</select></div>';
+    html += '</div>';
+    html += '<div class="formactions">';
+    html += '<button type="submit" class="btn primary">Guardar</button>';
+    html += '<button type="button" class="btn ghost" data-action="cancel-form">Cancelar</button>';
+    if(editing){ html += '<button type="button" class="btn danger" data-action="delete" data-id="'+editing.id+'">Eliminar</button>'; }
+    html += '</div>';
+    html += '</form>';
+  }
+
+  html += '<div class="legend">';
+  allCategories().forEach(function(c){
+    var dotStyle = c.builtin ? "background:var(--"+c.key+")" : "background:"+c.color;
+    html += '<span class="legend-item"><i style="'+dotStyle+'"></i>'+esc(c.label);
+    if(!c.builtin){
+      html += ' <button type="button" class="catdel" data-action="delete-cat" data-cat="'+c.key+'" aria-label="Eliminar categoría '+esc(c.label)+'">×</button>';
+    }
+    html += '</span>';
+  });
+  html += '</div>';
+
+  html += '<footer class="note">Toca el círculo para marcar una actividad como hecha.</footer>';
+
+  return html;
+}
+
+function renderNotas(){
+  var html = '<h2 class="sectiontitle">Notas</h2>';
+
+  if(noteMode==="recording"){
+    html += '<div class="recording-card"><span class="dot"></span><span class="rlabel">Grabando nota de voz…</span><span id="rec-timer" class="rt">00:00</span></div>';
+    html += '<div class="formactions"><button type="button" class="btn primary" data-action="note-stop">Detener y guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Descartar</button></div>';
+  } else if(noteMode==="write"){
+    html += '<form class="formcard" id="note-form"><h3>Nueva nota</h3><div class="field"><label for="note-text">Texto</label><textarea id="note-text" rows="4" placeholder="Escribe tu nota…"></textarea></div><div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div></form>';
+  } else {
+    html += '<div class="notes-controls">';
+    html += '<button type="button" class="btn primary" data-action="note-write">✍️ Escribir nota</button>';
+    html += '<button type="button" class="btn ghost" data-action="note-record">🎙️ Grabar nota</button>';
+    html += '</div>';
+  }
+
+  var notes = STATE.notes.slice().sort(function(a,b){ return b.createdAt.localeCompare(a.createdAt); });
+  if(notes.length===0){
+    if(noteMode===null){ html += '<p class="empty">Todavía no tienes notas. Escribe una o grábala con el micrófono.</p>'; }
+  } else {
+    html += '<div class="list">';
+    notes.forEach(function(n){
+      html += '<div class="entry">';
+      html += '<div class="body">';
+      html += '<div class="row1"><span class="time">'+fmtNoteDate(n.createdAt)+'</span></div>';
+      if(n.type==="text"){
+        html += '<div class="note-text">'+esc(n.text)+'</div>';
+      } else {
+        html += '<audio controls src="'+n.audio+'"></audio>';
+      }
+      html += '</div>';
+      html += '<div class="actions"><button type="button" class="iconbtn" data-action="delete-note" data-id="'+n.id+'" title="Eliminar">🗑️</button></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  return html;
+}
+
+function renderEstudios(){
+  var html = '<h2 class="sectiontitle">Estudios terminados</h2>';
+  var studies = STATE.studies.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  if(studies.length===0){
+    html += '<p class="empty">Todavía no has marcado ningún estudio como terminado.</p>';
+  } else {
+    html += '<div class="list">';
+    studies.forEach(function(s){
+      html += '<div class="entry">';
+      html += '<div class="body">';
+      html += '<div class="row1"><span class="time">'+fmtStudyDate(s.date)+'</span></div>';
+      html += '<div class="name">'+esc(s.name)+'</div>';
+      if(s.note){ html += '<div class="note-text">'+esc(s.note)+'</div>'; }
+      html += '</div>';
+      html += '<div class="actions">';
+      html += '<button type="button" class="iconbtn" data-action="study-edit" data-id="'+s.id+'" title="Editar">✏️</button>';
+      html += '<button type="button" class="iconbtn" data-action="delete-study" data-id="'+s.id+'" title="Eliminar">🗑️</button>';
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  if(studyMode==="new" || typeof studyMode==="number"){
+    var editing = typeof studyMode==="number" ? STATE.studies.find(function(s){return s.id===studyMode;}) : null;
+    var f = editing || {name:"", date:todayISODate(), note:""};
+    html += '<form class="formcard" id="study-form">';
+    html += '<h3>'+(editing?"Editar estudio":"Nuevo estudio terminado")+'</h3>';
+    html += '<div class="field"><label for="s-name">Estudio</label><input type="text" id="s-name" value="'+esc(f.name)+'" required maxlength="80" placeholder="Ej. Curso de acuarela"></div>';
+    html += '<div class="field"><label for="s-date">Fecha</label><input type="date" id="s-date" value="'+f.date+'"></div>';
+    html += '<div class="field"><label for="s-note">Nota (opcional)</label><input type="text" id="s-note" value="'+esc(f.note||"")+'" maxlength="120" placeholder="Ej. Nivel avanzado"></div>';
+    html += '<div class="formactions">';
+    html += '<button type="submit" class="btn primary">Guardar</button>';
+    html += '<button type="button" class="btn ghost" data-action="study-cancel">Cancelar</button>';
+    if(editing){ html += '<button type="button" class="btn danger" data-action="delete-study" data-id="'+editing.id+'">Eliminar</button>'; }
+    html += '</div>';
+    html += '</form>';
+  } else {
+    html += '<button type="button" class="addbtn" data-action="study-add">+ Añadir estudio terminado</button>';
+  }
+
+  return html;
+}
+
+function render(){
+  var app = document.getElementById("app");
+  var html = headerHtml();
+
+  if(currentView==="agenda") html += renderAgenda();
+  else if(currentView==="notas") html += renderNotas();
+  else if(currentView==="estudios") html += renderEstudios();
+
+  app.innerHTML = html;
+  attachFormListeners();
+}
+
+function attachFormListeners(){
+  var ef = document.getElementById("entry-form");
+  if(ef){ ef.addEventListener("submit", function(ev){ ev.preventDefault(); saveForm(); }); }
+  var nf = document.getElementById("note-form");
+  if(nf){ nf.addEventListener("submit", function(ev){ ev.preventDefault(); saveNoteText(); }); }
+  var sf = document.getElementById("study-form");
+  if(sf){ sf.addEventListener("submit", function(ev){ ev.preventDefault(); saveStudyForm(); }); }
+}
+
+function saveForm(){
+  var name = document.getElementById("f-name").value.trim();
+  var day = document.getElementById("f-day").value;
+  var cat = document.getElementById("f-cat").value;
+  var start = document.getElementById("f-start").value || "09:00";
+  var dur = parseFloat(document.getElementById("f-dur").value);
+  if(!name) return;
+
+  if(cat === "__new__"){
+    var newName = document.getElementById("f-newcat-name").value.trim();
+    var newColor = document.getElementById("f-newcat-color").value || "#4a6fa5";
+    if(!newName){ alert("Escribe un nombre para la nueva categoría."); return; }
+    var newKey = "c"+(STATE.nextId++);
+    STATE.categories.push({key:newKey, label:newName, color:newColor});
+    cat = newKey;
+  }
+
+  if(editingId==="new"){
+    STATE.entries.push({id:STATE.nextId++, day:day, start:start, dur:dur, name:name, cat:cat});
+  } else {
+    var e = STATE.entries.find(function(x){return x.id===editingId;});
+    if(e){ e.name=name; e.day=day; e.cat=cat; e.start=start; e.dur=dur; }
+  }
+  selectedDay = day;
+  editingId = null;
+  persist();
+}
+
+function saveNoteText(){
+  var text = document.getElementById("note-text").value.trim();
+  if(!text) return;
+  STATE.notes.push({id:STATE.nextId++, type:"text", text:text, createdAt:new Date().toISOString()});
+  noteMode = null;
+  persist();
+}
+
+function saveStudyForm(){
+  var name = document.getElementById("s-name").value.trim();
+  var date = document.getElementById("s-date").value || todayISODate();
+  var note = document.getElementById("s-note").value.trim();
+  if(!name) return;
+  if(typeof studyMode==="number"){
+    var s = STATE.studies.find(function(x){return x.id===studyMode;});
+    if(s){ s.name=name; s.date=date; s.note=note; }
+  } else {
+    STATE.studies.push({id:STATE.nextId++, name:name, date:date, note:note});
+  }
+  studyMode = null;
+  persist();
+}
+
+function startRecording(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder==="undefined"){
+    alert("Este dispositivo no permite grabar audio aquí. Puedes escribir la nota en su lugar.");
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    mediaStream = stream;
+    recordedChunks = [];
+    try{
+      mediaRecorder = new MediaRecorder(stream);
+    }catch(e){
+      alert("No se pudo iniciar la grabación. Puedes escribir la nota en su lugar.");
+      stream.getTracks().forEach(function(t){t.stop();});
+      return;
+    }
+    mediaRecorder.ondataavailable = function(e){ if(e.data && e.data.size>0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = function(){
+      var blob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || "audio/webm"});
+      var reader = new FileReader();
+      reader.onload = function(){
+        STATE.notes.push({id:STATE.nextId++, type:"audio", audio:reader.result, createdAt:new Date().toISOString()});
+        noteMode = null;
+        persist();
+      };
+      reader.readAsDataURL(blob);
+      if(mediaStream){ mediaStream.getTracks().forEach(function(t){t.stop();}); mediaStream = null; }
+    };
+    mediaRecorder.start();
+    recordingSeconds = 0;
+    noteMode = "recording";
+    render();
+    recordingTimer = setInterval(function(){
+      recordingSeconds++;
+      var el = document.getElementById("rec-timer");
+      if(el) el.textContent = fmtElapsed(recordingSeconds);
+    }, 1000);
+  }).catch(function(){
+    alert("No se pudo acceder al micrófono. Puedes escribir la nota en su lugar.");
+  });
+}
+
+function stopRecording(){
+  if(recordingTimer){ clearInterval(recordingTimer); recordingTimer = null; }
+  if(mediaRecorder && mediaRecorder.state!=="inactive"){ mediaRecorder.stop(); }
+}
+
+function cancelRecording(){
+  if(recordingTimer){ clearInterval(recordingTimer); recordingTimer = null; }
+  if(mediaRecorder){
+    mediaRecorder.onstop = null;
+    if(mediaRecorder.state!=="inactive"){ mediaRecorder.stop(); }
+  }
+  if(mediaStream){ mediaStream.getTracks().forEach(function(t){t.stop();}); mediaStream = null; }
+  noteMode = null;
+  render();
+}
+
+function noteCancel(){
+  if(noteMode==="recording"){ cancelRecording(); }
+  else { noteMode = null; render(); }
+}
+
+function persist(){
+  render();
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
+  }catch(e){ /* almacenamiento no disponible o lleno: la app sigue funcionando en memoria */ }
+}
+
+function onClick(ev){
+  var btn = ev.target.closest("[data-action]");
+  if(!btn) return;
+  var action = btn.getAttribute("data-action");
+  var idAttr = btn.getAttribute("data-id");
+  var id = idAttr!==null ? parseInt(idAttr,10) : null;
+
+  if(action==="select-view"){
+    currentView = btn.getAttribute("data-view");
+    editingId = null; noteMode = null; studyMode = null;
+    render();
+  } else if(action==="select-day"){
+    selectedDay = btn.getAttribute("data-day");
+    editingId = null;
+    render();
+  } else if(action==="toggle"){
+    if(STATE.done[id]) delete STATE.done[id]; else STATE.done[id]=true;
+    persist();
+  } else if(action==="add"){
+    editingId = "new";
+    render();
+  } else if(action==="edit"){
+    editingId = id;
+    render();
+  } else if(action==="delete"){
+    if(confirm("¿Eliminar esta actividad?")){
+      STATE.entries = STATE.entries.filter(function(e){return e.id!==id;});
+      delete STATE.done[id];
+      editingId = null;
+      persist();
+    }
+  } else if(action==="cancel-form"){
+    editingId = null;
+    render();
+  } else if(action==="reset-week"){
+    if(confirm("¿Borrar todas las marcas de esta semana?")){
+      STATE.done = {};
+      persist();
+    }
+  } else if(action==="delete-cat"){
+    var key = btn.getAttribute("data-cat");
+    if(confirm("¿Eliminar esta categoría? Las actividades que la usan pasarán a mostrarse como Deporte.")){
+      STATE.categories = STATE.categories.filter(function(c){return c.key!==key;});
+      persist();
+    }
+  } else if(action==="note-write"){
+    noteMode = "write";
+    render();
+  } else if(action==="note-record"){
+    startRecording();
+  } else if(action==="note-stop"){
+    stopRecording();
+  } else if(action==="note-cancel"){
+    noteCancel();
+  } else if(action==="delete-note"){
+    if(confirm("¿Eliminar esta nota?")){
+      STATE.notes = STATE.notes.filter(function(n){return n.id!==id;});
+      persist();
+    }
+  } else if(action==="study-add"){
+    studyMode = "new";
+    render();
+  } else if(action==="study-edit"){
+    studyMode = id;
+    render();
+  } else if(action==="study-cancel"){
+    studyMode = null;
+    render();
+  } else if(action==="delete-study"){
+    if(confirm("¿Eliminar este estudio?")){
+      STATE.studies = STATE.studies.filter(function(s){return s.id!==id;});
+      studyMode = null;
+      persist();
+    }
+  }
+}
+
+function onChange(ev){
+  if(ev.target && ev.target.id==="f-cat"){
+    var wrap = document.getElementById("new-cat-fields");
+    if(wrap) wrap.hidden = (ev.target.value !== "__new__");
+  }
+}
+
+function init(){
+  STATE = loadInitialState();
+  var changed = ensureCurrentWeek();
+  selectedDay = todayDayKey() || "lun";
+  document.addEventListener("click", onClick);
+  document.addEventListener("change", onChange);
+  render();
+  if(changed){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }catch(e){}
+  }
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+})();
+</script>
+</body>
+</html>
