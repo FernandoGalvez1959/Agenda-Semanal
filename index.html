@@ -237,6 +237,10 @@ footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-heigh
 }
 .logoutbtn:hover{border-color:var(--danger); color:var(--danger)}
 .syncnote{font-size:.72rem; color:var(--ink-soft); margin-top:6px}
+.syncbadge{display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--ink-soft); margin-top:6px}
+.syncbadge .dot{width:8px; height:8px; border-radius:50%; flex:0 0 auto}
+.syncbadge.on .dot{background:var(--accent)}
+.syncbadge.off .dot{background:var(--danger)}
 </style>
 </head>
 <body>
@@ -317,6 +321,7 @@ var auth = firebase.auth();
 var db = firebase.database();
 var currentUser = null;
 var dbRef = null;
+var connectedStatus = null; // null = desconocido, true = sincronizado, false = sin conexión
 var authMode = "login"; // "login" | "signup"
 var authError = null;
 var authBusy = false;
@@ -498,7 +503,13 @@ function ensureCurrentWeek(){
 function headerHtml(){
   var html = '<header class="top">';
   html += '<div class="topbar"><div><h1>Agenda tareas semanales</h1>';
-  html += "<p>"+esc(weekRangeLabel(new Date()))+"</p></div>";
+  html += "<p>"+esc(weekRangeLabel(new Date()))+"</p>";
+  if(connectedStatus===true){
+    html += '<div class="syncbadge on"><span class="dot"></span>Dispositivo sincronizado</div>';
+  } else if(connectedStatus===false){
+    html += '<div class="syncbadge off"><span class="dot"></span>Sin conexión — se guardará al reconectar</div>';
+  }
+  html += "</div>";
   html += '<button type="button" class="logoutbtn" data-action="auth-logout">Salir</button>';
   html += "</div></header>";
   html += '<nav class="viewnav" role="tablist">';
@@ -1005,6 +1016,11 @@ function init(){
   selectedDay = todayDayKey() || "lun";
   document.addEventListener("click", onClick);
   document.addEventListener("change", onChange);
+
+  db.ref(".info/connected").on("value", function(snap){
+    connectedStatus = snap.val()===true;
+    if(currentUser){ render(); }
+  });
 
   auth.onAuthStateChanged(function(user){
     authBusy = false;
