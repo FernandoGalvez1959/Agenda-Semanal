@@ -10,6 +10,21 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%85%3C/text%3E%3C/svg%3E" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Karla:wght@400;500;700;800&display=swap">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyCF6MazVLU0JZg_ELbfOxcObjL0V0VcMuY",
+    authDomain: "agenda-semanal-a1ff1.firebaseapp.com",
+    databaseURL: "https://agenda-semanal-a1ff1-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "agenda-semanal-a1ff1",
+    storageBucket: "agenda-semanal-a1ff1.firebasestorage.app",
+    messagingSenderId: "216411774939",
+    appId: "1:216411774939:web:b5f306d06c2b98dd9711fe"
+  };
+  firebase.initializeApp(firebaseConfig);
+</script>
 <style>
 :root{
   --bg:#f3f1ec;
@@ -207,6 +222,21 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 .catdel{border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:.95rem; line-height:1; padding:0 2px}
 .catdel:hover{color:var(--danger)}
 footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-height:1.5}
+.authwrap{min-height:70vh; display:flex; align-items:center; justify-content:center; padding-block:24px}
+.authcard{width:100%; max-width:360px; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:26px 22px; box-shadow:var(--shadow)}
+.authcard h1{font-size:1.4rem; margin-bottom:4px}
+.authcard .sub{color:var(--ink-soft); font-size:.88rem; margin-bottom:18px}
+.autherr{background:var(--danger-soft); color:var(--danger); font-size:.85rem; padding:9px 12px; border-radius:9px; margin-bottom:14px}
+.authswitch{margin-top:14px; font-size:.85rem; color:var(--ink-soft); text-align:center}
+.authswitch button{font:inherit; font-weight:700; color:var(--accent); background:none; border:none; cursor:pointer; padding:0; text-decoration:underline}
+.authcard .btn.primary{width:100%; padding:12px 16px}
+.topbar{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+.logoutbtn{
+  flex:0 0 auto; font:inherit; font-size:.78rem; color:var(--ink-soft); background:var(--surface);
+  border:1px solid var(--line); border-radius:9px; padding:8px 11px; cursor:pointer; margin-top:2px;
+}
+.logoutbtn:hover{border-color:var(--danger); color:var(--danger)}
+.syncnote{font-size:.72rem; color:var(--ink-soft); margin-top:6px}
 </style>
 </head>
 <body>
@@ -281,7 +311,15 @@ footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-heigh
 (function(){
 "use strict";
 
-var STORAGE_KEY = "agenda-semanal-state-v2";
+var CACHE_KEY = "agenda-semanal-cache-v1";
+
+var auth = firebase.auth();
+var db = firebase.database();
+var currentUser = null;
+var dbRef = null;
+var authMode = "login"; // "login" | "signup"
+var authError = null;
+var authBusy = false;
 
 var DAYS = [
   {key:"lun", label:"Lunes"},
@@ -312,14 +350,8 @@ var studyMode = null; // null | "new" | number
 
 var mediaRecorder = null, mediaStream = null, recordedChunks = [], recordingTimer = null, recordingSeconds = 0;
 
-function loadInitialState(){
-  var stored = null;
-  try{
-    var raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) stored = JSON.parse(raw);
-  }catch(e){ stored = null; }
-
-  var s = stored && stored.entries ? stored : JSON.parse(document.getElementById("state-data").textContent);
+function normalizeState(s){
+  if(!s || typeof s!=="object") s = {};
   if(!s.done) s.done = {};
   if(!s.entries) s.entries = [];
   if(!s.categories) s.categories = [];
@@ -327,6 +359,22 @@ function loadInitialState(){
   if(!s.studies) s.studies = [];
   if(typeof s.nextId !== "number") s.nextId = 1;
   return s;
+}
+
+function defaultState(){
+  return normalizeState(JSON.parse(document.getElementById("state-data").textContent));
+}
+
+function loadCachedState(){
+  try{
+    var raw = localStorage.getItem(CACHE_KEY);
+    if(raw) return normalizeState(JSON.parse(raw));
+  }catch(e){}
+  return null;
+}
+
+function saveCachedState(){
+  try{ localStorage.setItem(CACHE_KEY, JSON.stringify(STATE)); }catch(e){}
 }
 
 function pad(n){ return (n<10?"0":"")+n; }
@@ -449,14 +497,35 @@ function ensureCurrentWeek(){
 
 function headerHtml(){
   var html = '<header class="top">';
-  html += "<h1>Agenda tareas semanales</h1>";
-  html += "<p>"+esc(weekRangeLabel(new Date()))+"</p>";
-  html += "</header>";
+  html += '<div class="topbar"><div><h1>Agenda tareas semanales</h1>';
+  html += "<p>"+esc(weekRangeLabel(new Date()))+"</p></div>";
+  html += '<button type="button" class="logoutbtn" data-action="auth-logout">Salir</button>';
+  html += "</div></header>";
   html += '<nav class="viewnav" role="tablist">';
   VIEWS.forEach(function(v){
     html += '<button type="button" role="tab" aria-selected="'+(v.key===currentView)+'" data-action="select-view" data-view="'+v.key+'">'+v.label+"</button>";
   });
   html += "</nav>";
+  return html;
+}
+
+function renderAuthScreen(){
+  var isSignup = authMode==="signup";
+  var html = '<div class="authwrap"><div class="authcard">';
+  html += "<h1>Agenda tareas semanales</h1>";
+  html += '<p class="sub">'+(isSignup ? "Crea tu cuenta para sincronizar la agenda entre tus dispositivos." : "Entra con tu correo y contraseña para ver tu agenda.")+'</p>';
+  if(authError){ html += '<div class="autherr">'+esc(authError)+'</div>'; }
+  html += '<form id="auth-form">';
+  html += '<div class="field"><label for="auth-email">Correo</label><input type="email" id="auth-email" required autocomplete="email" placeholder="tucorreo@ejemplo.com"></div>';
+  html += '<div class="field"><label for="auth-password">Contraseña</label><input type="password" id="auth-password" required autocomplete="'+(isSignup?"new-password":"current-password")+'" minlength="6" placeholder="Mínimo 6 caracteres"></div>';
+  html += '<button type="submit" class="btn primary" '+(authBusy?"disabled":"")+'>'+(authBusy ? "Un momento…" : (isSignup ? "Crear cuenta" : "Entrar"))+'</button>';
+  html += '</form>';
+  html += '<div class="authswitch">';
+  html += isSignup
+    ? '¿Ya tienes cuenta? <button type="button" data-action="auth-toggle-mode">Entra aquí</button>'
+    : '¿Primera vez? <button type="button" data-action="auth-toggle-mode">Crea tu cuenta</button>';
+  html += '</div>';
+  html += '</div></div>';
   return html;
 }
 
@@ -643,8 +712,20 @@ function renderEstudios(){
 
 function render(){
   var app = document.getElementById("app");
-  var html = headerHtml();
 
+  if(!currentUser){
+    app.innerHTML = renderAuthScreen();
+    var af = document.getElementById("auth-form");
+    if(af){ af.addEventListener("submit", function(ev){ ev.preventDefault(); submitAuthForm(); }); }
+    return;
+  }
+
+  if(!STATE){
+    app.innerHTML = '<div class="authwrap"><p class="empty">Cargando tu agenda…</p></div>';
+    return;
+  }
+
+  var html = headerHtml();
   if(currentView==="agenda") html += renderAgenda();
   else if(currentView==="notas") html += renderNotas();
   else if(currentView==="estudios") html += renderEstudios();
@@ -660,6 +741,33 @@ function attachFormListeners(){
   if(nf){ nf.addEventListener("submit", function(ev){ ev.preventDefault(); saveNoteText(); }); }
   var sf = document.getElementById("study-form");
   if(sf){ sf.addEventListener("submit", function(ev){ ev.preventDefault(); saveStudyForm(); }); }
+}
+
+function submitAuthForm(){
+  var email = document.getElementById("auth-email").value.trim();
+  var password = document.getElementById("auth-password").value;
+  authError = null;
+  authBusy = true;
+  render();
+  var action = authMode==="signup"
+    ? auth.createUserWithEmailAndPassword(email, password)
+    : auth.signInWithEmailAndPassword(email, password);
+  action.catch(function(err){
+    authBusy = false;
+    authError = authErrorMessage(err);
+    render();
+  });
+}
+
+function authErrorMessage(err){
+  var code = err && err.code;
+  if(code==="auth/invalid-email") return "Ese correo no es válido.";
+  if(code==="auth/user-not-found") return "No existe una cuenta con ese correo. Prueba a crear una.";
+  if(code==="auth/wrong-password" || code==="auth/invalid-credential") return "La contraseña no es correcta.";
+  if(code==="auth/email-already-in-use") return "Ya existe una cuenta con ese correo. Prueba a entrar en vez de crearla.";
+  if(code==="auth/weak-password") return "La contraseña debe tener al menos 6 caracteres.";
+  if(code==="auth/network-request-failed") return "No hay conexión a internet.";
+  return "Ha ocurrido un error. Inténtalo de nuevo.";
 }
 
 function saveForm(){
@@ -777,9 +885,8 @@ function noteCancel(){
 
 function persist(){
   render();
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
-  }catch(e){ /* almacenamiento no disponible o lleno: la app sigue funcionando en memoria */ }
+  saveCachedState();
+  if(dbRef){ dbRef.set(STATE).catch(function(){ /* sin conexión: se reintentará solo cuando Firebase reconecte */ }); }
 }
 
 function onClick(ev){
@@ -856,6 +963,14 @@ function onClick(ev){
       studyMode = null;
       persist();
     }
+  } else if(action==="auth-toggle-mode"){
+    authMode = authMode==="signup" ? "login" : "signup";
+    authError = null;
+    render();
+  } else if(action==="auth-logout"){
+    if(confirm("¿Cerrar sesión en este dispositivo?")){
+      auth.signOut();
+    }
   }
 }
 
@@ -866,16 +981,46 @@ function onChange(ev){
   }
 }
 
+function attachDbListener(uid){
+  if(dbRef){ dbRef.off(); }
+  dbRef = db.ref("users/"+uid+"/state");
+  dbRef.on("value", function(snapshot){
+    var remote = snapshot.val();
+    if(remote){
+      STATE = normalizeState(remote);
+    } else {
+      STATE = loadCachedState() || defaultState();
+      dbRef.set(STATE).catch(function(){});
+    }
+    var changed = ensureCurrentWeek();
+    saveCachedState();
+    render();
+    if(changed){ persist(); }
+  }, function(){
+    if(!STATE){ STATE = loadCachedState() || defaultState(); ensureCurrentWeek(); render(); }
+  });
+}
+
 function init(){
-  STATE = loadInitialState();
-  var changed = ensureCurrentWeek();
   selectedDay = todayDayKey() || "lun";
   document.addEventListener("click", onClick);
   document.addEventListener("change", onChange);
+
+  auth.onAuthStateChanged(function(user){
+    authBusy = false;
+    if(user){
+      currentUser = user;
+      authError = null;
+      attachDbListener(user.uid);
+    } else {
+      currentUser = null;
+      STATE = null;
+      if(dbRef){ dbRef.off(); dbRef = null; }
+    }
+    render();
+  });
+
   render();
-  if(changed){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE)); }catch(e){}
-  }
 }
 
 if(document.readyState==="loading"){
