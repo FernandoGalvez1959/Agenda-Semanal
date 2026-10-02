@@ -329,8 +329,7 @@ var BASE_CATS = [
 var VIEWS = [
   {key:"agenda", label:"Agenda"},
   {key:"notas", label:"Notas"},
-  {key:"paginas", label:"Páginas"},
-  {key:"estudios", label:"Estudios terminados"}
+  {key:"paginas", label:"Páginas"}
 ];
 
 var STATE = null;
@@ -338,6 +337,7 @@ var currentView = "agenda";
 var selectedDay = null;
 var editingId = null; // null = no form, "new" = adding, number = editing that id
 var noteMode = null; // null | "write" | "recording"
+var editingNoteId = null; // null, o el id de la nota que se está editando
 var studyMode = null; // null | "new" | number
 var currentPageId = null;
 
@@ -468,6 +468,10 @@ function esc(str){
   var d = document.createElement("div");
   d.textContent = str;
   return d.innerHTML;
+}
+
+function mdBold(str){
+  return esc(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
 function hexToRgb(hex){
@@ -622,13 +626,24 @@ function renderAgenda(){
   return html;
 }
 
-function renderNoteControls(){
+function renderNoteControls(notesArr){
   var html = "";
   if(noteMode==="recording"){
     html += '<div class="recording-card"><span class="dot"></span><span class="rlabel">Grabando nota de voz…</span><span id="rec-timer" class="rt">00:00</span></div>';
     html += '<div class="formactions"><button type="button" class="btn primary" data-action="note-stop">Detener y guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Descartar</button></div>';
   } else if(noteMode==="write"){
-    html += '<form class="formcard" id="note-form"><h3>Nueva nota</h3><div class="field"><label for="note-text">Texto</label><textarea id="note-text" rows="4" placeholder="Escribe tu nota…"></textarea></div><div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div></form>';
+    var editing = editingNoteId!==null ? notesArr.find(function(n){return n.id===editingNoteId;}) : null;
+    var isAudio = editing && editing.type==="audio";
+    html += '<form class="formcard" id="note-form">';
+    html += '<h3>'+(editing?"Editar nota":"Nueva nota")+'</h3>';
+    html += '<div class="field"><label for="note-title">Título (opcional)</label><input type="text" id="note-title" maxlength="60" value="'+esc(editing&&editing.title?editing.title:"")+'" placeholder="Ej. Idea para el taller"></div>';
+    if(!isAudio){
+      html += '<div class="field"><label for="note-text">Texto</label>';
+      html += '<div class="formactions" style="margin:0 0 6px 0"><button type="button" class="btn ghost" data-action="note-bold" title="Negrita" style="font-weight:800">N</button></div>';
+      html += '<textarea id="note-text" rows="4" placeholder="Escribe tu nota…">'+(editing?esc(editing.text):"")+'</textarea></div>';
+    }
+    html += '<div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div>';
+    html += '</form>';
   } else {
     html += '<div class="notes-controls">';
     html += '<button type="button" class="btn primary" data-action="note-write">✍️ Escribir nota</button>';
@@ -649,13 +664,17 @@ function renderNotesListHtml(notesArr){
       html += '<div class="entry">';
       html += '<div class="body">';
       html += '<div class="row1"><span class="time">'+fmtNoteDate(n.createdAt)+'</span></div>';
+      if(n.title){ html += '<div class="name">'+esc(n.title)+'</div>'; }
       if(n.type==="text"){
-        html += '<div class="note-text">'+esc(n.text)+'</div>';
+        html += '<div class="note-text">'+mdBold(n.text)+'</div>';
       } else {
         html += '<audio controls src="'+n.audio+'"></audio>';
       }
       html += '</div>';
-      html += '<div class="actions"><button type="button" class="iconbtn" data-action="delete-note" data-id="'+n.id+'" title="Eliminar">🗑️</button></div>';
+      html += '<div class="actions">';
+      html += '<button type="button" class="iconbtn" data-action="edit-note" data-id="'+n.id+'" title="Editar">✏️</button>';
+      html += '<button type="button" class="iconbtn" data-action="delete-note" data-id="'+n.id+'" title="Eliminar">🗑️</button>';
+      html += '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -665,7 +684,7 @@ function renderNotesListHtml(notesArr){
 
 function renderNotas(){
   var html = '<h2 class="sectiontitle">Notas</h2>';
-  html += renderNoteControls();
+  html += renderNoteControls(STATE.notes);
   html += renderNotesListHtml(STATE.notes);
   return html;
 }
@@ -687,6 +706,7 @@ function renderPaginas(){
   STATE.pages.forEach(function(p){
     html += '<button type="button" class="tab" role="tab" aria-selected="'+(p.id===currentPageId)+'" data-action="select-page" data-page="'+p.id+'">'+esc(p.name)+'</button>';
   });
+  html += '<button type="button" class="btn danger" data-action="page-delete" data-page="'+currentPageId+'" style="margin-left:auto">🗑️ Eliminar página</button>';
   html += '</nav>';
 
   html += '<div class="formactions" style="margin-bottom:16px">';
@@ -694,11 +714,10 @@ function renderPaginas(){
   html += '<button type="button" class="btn ghost" data-action="page-rename" data-page="'+currentPageId+'">✏️ Renombrar</button>';
   html += '<button type="button" class="btn ghost" data-action="page-moveup" data-page="'+currentPageId+'">⬆️ Mover</button>';
   html += '<button type="button" class="btn ghost" data-action="page-movedown" data-page="'+currentPageId+'">⬇️ Mover</button>';
-  html += '<button type="button" class="btn danger" data-action="page-delete" data-page="'+currentPageId+'">🗑️ Eliminar página</button>';
   html += '</div>';
 
-  html += renderNoteControls();
   var arr = STATE.pageNotes[currentPageId] || [];
+  html += renderNoteControls(arr);
   html += renderNotesListHtml(arr);
   return html;
 }
@@ -760,7 +779,6 @@ function render(){
   if(currentView==="agenda") html += renderAgenda();
   else if(currentView==="notas") html += renderNotas();
   else if(currentView==="paginas") html += renderPaginas();
-  else if(currentView==="estudios") html += renderEstudios();
 
   app.innerHTML = html;
   attachFormListeners();
@@ -804,9 +822,28 @@ function saveForm(){
 }
 
 function saveNoteText(){
-  var text = document.getElementById("note-text").value.trim();
+  var titleEl = document.getElementById("note-title");
+  var title = titleEl ? titleEl.value.trim() : "";
+  var textEl = document.getElementById("note-text");
+  var text = textEl ? textEl.value.trim() : "";
+
+  if(editingNoteId!==null){
+    var n = currentNotesArray().find(function(x){return x.id===editingNoteId;});
+    if(n){
+      n.title = title;
+      if(n.type==="text"){
+        if(!text) return;
+        n.text = text;
+      }
+    }
+    editingNoteId = null;
+    noteMode = null;
+    persist();
+    return;
+  }
+
   if(!text) return;
-  currentNotesArray().push({id:STATE.nextId++, type:"text", text:text, createdAt:new Date().toISOString()});
+  currentNotesArray().push({id:STATE.nextId++, type:"text", title:title, text:text, createdAt:new Date().toISOString()});
   noteMode = null;
   persist();
 }
@@ -885,7 +922,7 @@ function cancelRecording(){
 
 function noteCancel(){
   if(noteMode==="recording"){ cancelRecording(); }
-  else { noteMode = null; render(); }
+  else { noteMode = null; editingNoteId = null; render(); }
 }
 
 function persist(){
@@ -943,14 +980,36 @@ function onClick(ev){
       persist();
     }
   } else if(action==="note-write"){
+    editingNoteId = null;
     noteMode = "write";
     render();
   } else if(action==="note-record"){
+    editingNoteId = null;
     startRecording();
   } else if(action==="note-stop"){
     stopRecording();
   } else if(action==="note-cancel"){
     noteCancel();
+  } else if(action==="edit-note"){
+    editingNoteId = id;
+    noteMode = "write";
+    render();
+  } else if(action==="note-bold"){
+    var ta = document.getElementById("note-text");
+    if(ta){
+      var start = ta.selectionStart, end = ta.selectionEnd, val = ta.value;
+      if(start===end){
+        var ins = "**texto**";
+        ta.value = val.slice(0,start) + ins + val.slice(end);
+        ta.focus();
+        ta.setSelectionRange(start+2, start+7);
+      } else {
+        var sel = val.slice(start,end);
+        ta.value = val.slice(0,start) + "**"+sel+"**" + val.slice(end);
+        ta.focus();
+        ta.setSelectionRange(start, end+4);
+      }
+    }
   } else if(action==="delete-note"){
     if(confirm("¿Eliminar esta nota?")){
       setCurrentNotesArray(currentNotesArray().filter(function(n){return n.id!==id;}));
