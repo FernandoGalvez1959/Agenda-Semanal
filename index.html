@@ -206,6 +206,7 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 .btn.primary{background:var(--accent); color:var(--accent-ink)}
 .btn.ghost{background:none; border-color:var(--line); color:var(--ink)}
 .btn.danger{background:var(--danger-soft); color:var(--danger)}
+.btn.soft{background:var(--accent-soft); color:var(--accent)}
 .notes-controls{display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap}
 .notes-controls .btn{flex:1; min-width:150px}
 .recording-card{
@@ -706,14 +707,16 @@ function renderPaginas(){
   STATE.pages.forEach(function(p){
     html += '<button type="button" class="tab" role="tab" aria-selected="'+(p.id===currentPageId)+'" data-action="select-page" data-page="'+p.id+'">'+esc(p.name)+'</button>';
   });
-  html += '<button type="button" class="btn danger" data-action="page-delete" data-page="'+currentPageId+'" style="margin-left:auto">🗑️ Eliminar página</button>';
   html += '</nav>';
 
+  html += '<div class="formactions" style="margin-bottom:8px">';
+  html += '<button type="button" class="btn soft" data-action="page-add" style="flex:1">+ Nueva página</button>';
+  html += '<button type="button" class="btn soft" data-action="page-rename" data-page="'+currentPageId+'" style="flex:1">✏️ Renombrar</button>';
+  html += '</div>';
   html += '<div class="formactions" style="margin-bottom:16px">';
-  html += '<button type="button" class="btn ghost" data-action="page-add">+ Nueva página</button>';
-  html += '<button type="button" class="btn ghost" data-action="page-rename" data-page="'+currentPageId+'">✏️ Renombrar</button>';
-  html += '<button type="button" class="btn ghost" data-action="page-moveup" data-page="'+currentPageId+'">⬆️ Mover</button>';
-  html += '<button type="button" class="btn ghost" data-action="page-movedown" data-page="'+currentPageId+'">⬇️ Mover</button>';
+  html += '<button type="button" class="btn soft" data-action="page-moveup" data-page="'+currentPageId+'">⬆️ Mover</button>';
+  html += '<button type="button" class="btn soft" data-action="page-movedown" data-page="'+currentPageId+'">⬇️ Mover</button>';
+  html += '<button type="button" class="btn danger" data-action="page-delete" data-page="'+currentPageId+'">🗑️ Eliminar página</button>';
   html += '</div>';
 
   var arr = STATE.pageNotes[currentPageId] || [];
