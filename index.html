@@ -713,10 +713,10 @@ function renderPaginas(){
   html += '<button type="button" class="btn soft" data-action="page-add" style="flex:1">+ Nueva página</button>';
   html += '<button type="button" class="btn soft" data-action="page-rename" data-page="'+currentPageId+'" style="flex:1">✏️ Renombrar</button>';
   html += '</div>';
-  html += '<div class="formactions" style="margin-bottom:16px">';
-  html += '<button type="button" class="btn soft" data-action="page-moveup" data-page="'+currentPageId+'">⬆️ Mover</button>';
-  html += '<button type="button" class="btn soft" data-action="page-movedown" data-page="'+currentPageId+'">⬇️ Mover</button>';
-  html += '<button type="button" class="btn danger" data-action="page-delete" data-page="'+currentPageId+'">🗑️ Eliminar página</button>';
+  html += '<div class="formactions" style="margin-bottom:16px; flex-wrap:nowrap">';
+  html += '<button type="button" class="btn soft" data-action="page-moveup" data-page="'+currentPageId+'" style="flex:1; padding-inline:4px">⬆️</button>';
+  html += '<button type="button" class="btn soft" data-action="page-movedown" data-page="'+currentPageId+'" style="flex:1; padding-inline:4px">⬇️</button>';
+  html += '<button type="button" class="btn danger" data-action="page-delete" data-page="'+currentPageId+'" style="flex:2; padding-inline:4px">🗑️ Eliminar</button>';
   html += '</div>';
 
   var arr = STATE.pageNotes[currentPageId] || [];
