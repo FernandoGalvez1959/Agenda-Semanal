@@ -473,7 +473,9 @@ function esc(str){
 }
 
 function mdBold(str){
-  return esc(str).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  return esc(str)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/~~(.+?)~~/g, "<s>$1</s>");
 }
 
 function hexToRgb(hex){
@@ -641,7 +643,10 @@ function renderNoteControls(notesArr){
     html += '<div class="field"><label for="note-title">Título (opcional)</label><input type="text" id="note-title" maxlength="60" value="'+esc(editing&&editing.title?editing.title:"")+'" placeholder="Ej. Idea para el taller"></div>';
     if(!isAudio){
       html += '<div class="field"><label for="note-text">Texto</label>';
-      html += '<div class="formactions" style="margin:0 0 6px 0"><button type="button" class="btn ghost" data-action="note-bold" title="Negrita" style="font-weight:800">N</button></div>';
+      html += '<div class="formactions" style="margin:0 0 6px 0">';
+      html += '<button type="button" class="btn ghost" data-action="note-bold" title="Negrita" style="font-weight:800">N</button>';
+      html += '<button type="button" class="btn ghost" data-action="note-strike" title="Tachado" style="text-decoration:line-through">T</button>';
+      html += '</div>';
       html += '<textarea id="note-text" rows="4" placeholder="Escribe tu nota…">'+(editing?esc(editing.text):"")+'</textarea></div>';
     }
     html += '<div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div>';
@@ -1028,6 +1033,22 @@ function onClick(ev){
         ta.value = val.slice(0,start) + "**"+sel+"**" + val.slice(end);
         ta.focus();
         ta.setSelectionRange(start, end+4);
+      }
+    }
+  } else if(action==="note-strike"){
+    var ta2 = document.getElementById("note-text");
+    if(ta2){
+      var start2 = ta2.selectionStart, end2 = ta2.selectionEnd, val2 = ta2.value;
+      if(start2===end2){
+        var ins2 = "~~texto~~";
+        ta2.value = val2.slice(0,start2) + ins2 + val2.slice(end2);
+        ta2.focus();
+        ta2.setSelectionRange(start2+2, start2+7);
+      } else {
+        var sel2 = val2.slice(start2,end2);
+        ta2.value = val2.slice(0,start2) + "~~"+sel2+"~~" + val2.slice(end2);
+        ta2.focus();
+        ta2.setSelectionRange(start2, end2+4);
       }
     }
   } else if(action==="delete-note"){
