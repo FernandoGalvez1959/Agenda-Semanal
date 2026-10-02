@@ -656,12 +656,11 @@ function renderNoteControls(notesArr){
 
 function renderNotesListHtml(notesArr){
   var html = "";
-  var notes = notesArr.slice().sort(function(a,b){ return b.createdAt.localeCompare(a.createdAt); });
-  if(notes.length===0){
+  if(notesArr.length===0){
     if(noteMode===null){ html += '<p class="empty">Todavía no tienes notas. Escribe una o grábala con el micrófono.</p>'; }
   } else {
     html += '<div class="list">';
-    notes.forEach(function(n){
+    notesArr.forEach(function(n, i){
       html += '<div class="entry">';
       html += '<div class="body">';
       html += '<div class="row1"><span class="time">'+fmtNoteDate(n.createdAt)+'</span></div>';
@@ -673,6 +672,8 @@ function renderNotesListHtml(notesArr){
       }
       html += '</div>';
       html += '<div class="actions">';
+      if(i>0){ html += '<button type="button" class="iconbtn" data-action="note-moveup" data-id="'+n.id+'" title="Subir">⬆️</button>'; }
+      if(i<notesArr.length-1){ html += '<button type="button" class="iconbtn" data-action="note-movedown" data-id="'+n.id+'" title="Bajar">⬇️</button>'; }
       html += '<button type="button" class="iconbtn" data-action="edit-note" data-id="'+n.id+'" title="Editar">✏️</button>';
       html += '<button type="button" class="iconbtn" data-action="delete-note" data-id="'+n.id+'" title="Eliminar">🗑️</button>';
       html += '</div>';
@@ -846,7 +847,7 @@ function saveNoteText(){
   }
 
   if(!text) return;
-  currentNotesArray().push({id:STATE.nextId++, type:"text", title:title, text:text, createdAt:new Date().toISOString()});
+  currentNotesArray().unshift({id:STATE.nextId++, type:"text", title:title, text:text, createdAt:new Date().toISOString()});
   noteMode = null;
   persist();
 }
@@ -886,7 +887,7 @@ function startRecording(){
       var blob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || "audio/webm"});
       var reader = new FileReader();
       reader.onload = function(){
-        currentNotesArray().push({id:STATE.nextId++, type:"audio", audio:reader.result, createdAt:new Date().toISOString()});
+        currentNotesArray().unshift({id:STATE.nextId++, type:"audio", audio:reader.result, createdAt:new Date().toISOString()});
         noteMode = null;
         persist();
       };
@@ -1018,6 +1019,10 @@ function onClick(ev){
       setCurrentNotesArray(currentNotesArray().filter(function(n){return n.id!==id;}));
       persist();
     }
+  } else if(action==="note-moveup"){
+    moveNoteBy(id, -1);
+  } else if(action==="note-movedown"){
+    moveNoteBy(id, 1);
   } else if(action==="page-add"){
     var pname = prompt("Nombre de la nueva página:");
     if(pname && pname.trim()){
@@ -1079,6 +1084,17 @@ function movePageBy(id, delta){
   var tmp = STATE.pages[idx];
   STATE.pages[idx] = STATE.pages[newIdx];
   STATE.pages[newIdx] = tmp;
+  persist();
+}
+
+function moveNoteBy(id, delta){
+  var arr = currentNotesArray();
+  var idx = arr.findIndex(function(n){return n.id===id;});
+  var newIdx = idx+delta;
+  if(idx<0 || newIdx<0 || newIdx>=arr.length) return;
+  var tmp = arr[idx];
+  arr[idx] = arr[newIdx];
+  arr[newIdx] = tmp;
   persist();
 }
 
