@@ -630,27 +630,34 @@ function renderAgenda(){
   return html;
 }
 
+function renderNoteForm(editing){
+  var isAudio = editing && editing.type==="audio";
+  var html = '<form class="formcard" id="note-form">';
+  html += '<h3>'+(editing?"Editar nota":"Nueva nota")+'</h3>';
+  html += '<div class="field"><label for="note-title">Título (opcional)</label><input type="text" id="note-title" maxlength="60" value="'+esc(editing&&editing.title?editing.title:"")+'" placeholder="Ej. Idea para el taller"></div>';
+  if(!isAudio){
+    html += '<div class="field"><label for="note-text">Texto</label>';
+    html += '<div class="formactions" style="margin:0 0 6px 0">';
+    html += '<button type="button" class="btn ghost" data-action="note-bold" title="Negrita" style="font-weight:800">N</button>';
+    html += '<button type="button" class="btn ghost" data-action="note-strike" title="Tachado" style="text-decoration:line-through">T</button>';
+    html += '</div>';
+    html += '<textarea id="note-text" rows="4" placeholder="Escribe tu nota…">'+(editing?esc(editing.text):"")+'</textarea></div>';
+  }
+  html += '<div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div>';
+  html += '</form>';
+  return html;
+}
+
 function renderNoteControls(notesArr){
   var html = "";
   if(noteMode==="recording"){
     html += '<div class="recording-card"><span class="dot"></span><span class="rlabel">Grabando nota de voz…</span><span id="rec-timer" class="rt">00:00</span></div>';
     html += '<div class="formactions"><button type="button" class="btn primary" data-action="note-stop">Detener y guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Descartar</button></div>';
   } else if(noteMode==="write"){
-    var editing = editingNoteId!==null ? notesArr.find(function(n){return n.id===editingNoteId;}) : null;
-    var isAudio = editing && editing.type==="audio";
-    html += '<form class="formcard" id="note-form">';
-    html += '<h3>'+(editing?"Editar nota":"Nueva nota")+'</h3>';
-    html += '<div class="field"><label for="note-title">Título (opcional)</label><input type="text" id="note-title" maxlength="60" value="'+esc(editing&&editing.title?editing.title:"")+'" placeholder="Ej. Idea para el taller"></div>';
-    if(!isAudio){
-      html += '<div class="field"><label for="note-text">Texto</label>';
-      html += '<div class="formactions" style="margin:0 0 6px 0">';
-      html += '<button type="button" class="btn ghost" data-action="note-bold" title="Negrita" style="font-weight:800">N</button>';
-      html += '<button type="button" class="btn ghost" data-action="note-strike" title="Tachado" style="text-decoration:line-through">T</button>';
-      html += '</div>';
-      html += '<textarea id="note-text" rows="4" placeholder="Escribe tu nota…">'+(editing?esc(editing.text):"")+'</textarea></div>';
+    if(editingNoteId===null){
+      html += renderNoteForm(null);
     }
-    html += '<div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div>';
-    html += '</form>';
+    // si se está editando una nota existente, su formulario se muestra en su propio sitio dentro de la lista
   } else {
     html += '<div class="notes-controls">';
     html += '<button type="button" class="btn primary" data-action="note-write">✍️ Escribir nota</button>';
@@ -667,6 +674,10 @@ function renderNotesListHtml(notesArr){
   } else {
     html += '<div class="list">';
     notesArr.forEach(function(n, i){
+      if(noteMode==="write" && editingNoteId===n.id){
+        html += renderNoteForm(n);
+        return;
+      }
       html += '<div class="entry">';
       html += '<div class="body">';
       html += '<div class="row1"><span class="time">'+fmtNoteDate(n.createdAt)+'</span></div>';
