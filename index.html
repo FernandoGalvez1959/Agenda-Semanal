@@ -330,7 +330,8 @@ var BASE_CATS = [
 var VIEWS = [
   {key:"agenda", label:"Agenda"},
   {key:"notas", label:"Notas"},
-  {key:"paginas", label:"Páginas"}
+  {key:"paginas", label:"Páginas"},
+  {key:"backup", label:"Copia"}
 ];
 
 var STATE = null;
@@ -726,6 +727,20 @@ function renderPaginas(){
   return html;
 }
 
+function renderBackup(){
+  var html = '<h2 class="sectiontitle">Copia de seguridad</h2>';
+  html += '<p class="empty" style="padding:0 0 14px">Guarda un archivo con todos tus datos (actividades, notas, páginas y estudios) para tenerlo a salvo, o restaura uno que hayas guardado antes.</p>';
+  html += '<div class="formactions" style="margin-bottom:10px">';
+  html += '<button type="button" class="btn primary" data-action="backup-export" style="flex:1">⬇️ Descargar copia de seguridad</button>';
+  html += '</div>';
+  html += '<div class="formactions">';
+  html += '<button type="button" class="btn ghost" data-action="backup-restore-pick" style="flex:1">⬆️ Restaurar desde un archivo</button>';
+  html += '</div>';
+  html += '<input type="file" id="backup-file-input" accept="application/json,.json" style="display:none">';
+  html += '<p class="syncnote">La copia se descarga en tu dispositivo (normalmente en la carpeta Descargas). Puedes guardarla donde quieras, o enviártela por correo, como seguridad extra además de la sincronización automática. Restaurar una copia sustituye todos los datos actuales de la agenda.</p>';
+  return html;
+}
+
 function renderEstudios(){
   var html = '<h2 class="sectiontitle">Estudios terminados</h2>';
   var studies = STATE.studies.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
@@ -783,6 +798,7 @@ function render(){
   if(currentView==="agenda") html += renderAgenda();
   else if(currentView==="notas") html += renderNotas();
   else if(currentView==="paginas") html += renderPaginas();
+  else if(currentView==="backup") html += renderBackup();
 
   app.innerHTML = html;
   attachFormListeners();
@@ -1074,6 +1090,11 @@ function onClick(ev){
     currentPageId = btn.getAttribute("data-page");
     noteMode = null;
     render();
+  } else if(action==="backup-export"){
+    exportBackup();
+  } else if(action==="backup-restore-pick"){
+    var fi = document.getElementById("backup-file-input");
+    if(fi){ fi.click(); }
   }
 }
 
@@ -1102,7 +1123,54 @@ function onChange(ev){
   if(ev.target && ev.target.id==="f-cat"){
     var wrap = document.getElementById("new-cat-fields");
     if(wrap) wrap.hidden = (ev.target.value !== "__new__");
+  } else if(ev.target && ev.target.id==="backup-file-input"){
+    var file = ev.target.files && ev.target.files[0];
+    handleRestoreFile(file);
+    ev.target.value = "";
   }
+}
+
+function exportBackup(){
+  var data = JSON.stringify(STATE, null, 2);
+  var blob = new Blob([data], {type:"application/json"});
+  var url = URL.createObjectURL(blob);
+  var d = new Date();
+  var fname = "agenda-copia-"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+".json";
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+}
+
+function handleRestoreFile(file){
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(){
+    var parsed;
+    try{
+      parsed = JSON.parse(reader.result);
+    }catch(e){
+      alert("Ese archivo no es una copia de seguridad válida.");
+      return;
+    }
+    if(!parsed || typeof parsed!=="object" || !Array.isArray(parsed.entries)){
+      alert("Ese archivo no es una copia de seguridad válida.");
+      return;
+    }
+    if(!confirm("¿Seguro que quieres restaurar esta copia? Se sustituirán todas las actividades, notas, páginas y estudios actuales por los de la copia, en todos tus dispositivos. No se puede deshacer.")) return;
+    STATE = normalizeState(parsed);
+    ensureCurrentWeek();
+    saveCachedState();
+    render();
+    persist();
+  };
+  reader.onerror = function(){
+    alert("No se pudo leer el archivo. Inténtalo de nuevo.");
+  };
+  reader.readAsText(file);
 }
 
 function finishStateLoad(){
