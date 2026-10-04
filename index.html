@@ -311,6 +311,7 @@ var auth = firebase.auth();
 var db = firebase.database();
 var currentUser = null;
 var dbRef = null;
+var syncError = null; // código de error de Firebase si algo falla al sincronizar
 var connectedStatus = null; // null = desconocido, true = sincronizado, false = sin conexión
 
 var DAYS = [
@@ -518,7 +519,9 @@ function headerHtml(){
   var html = '<header class="top">';
   html += '<h1>Agenda tareas semanales</h1>';
   html += "<p>"+esc(weekRangeLabel(new Date()))+"</p>";
-  if(connectedStatus===true){
+  if(syncError){
+    html += '<div class="syncbadge off"><span class="dot"></span>NO se está sincronizando ('+esc(String(syncError))+')</div>';
+  } else if(connectedStatus===true){
     html += '<div class="syncbadge on"><span class="dot"></span>Dispositivo sincronizado</div>';
   } else if(connectedStatus===false){
     html += '<div class="syncbadge off"><span class="dot"></span>Sin conexión — se guardará al reconectar</div>';
@@ -964,7 +967,14 @@ function noteCancel(){
 function persist(){
   render();
   saveCachedState();
-  if(dbRef){ dbRef.set(STATE).catch(function(){ /* sin conexión: se reintentará solo cuando Firebase reconecte */ }); }
+  if(dbRef){
+    dbRef.set(STATE).then(function(){
+      if(syncError){ syncError = null; render(); }
+    }).catch(function(err){
+      syncError = (err && err.code) ? err.code : "error";
+      render();
+    });
+  }
 }
 
 function onClick(ev){
@@ -1216,6 +1226,7 @@ function attachSharedListener(){
   if(dbRef){ dbRef.off(); }
   dbRef = db.ref("app/agendaState");
   dbRef.on("value", function(snapshot){
+    syncError = null;
     var remote = snapshot.val();
     if(remote){
       STATE = normalizeState(remote);
@@ -1238,8 +1249,10 @@ function attachSharedListener(){
       dbRef.set(STATE).catch(function(){});
       finishStateLoad();
     }
-  }, function(){
+  }, function(err){
+    syncError = (err && err.code) ? err.code : "error";
     if(!STATE){ STATE = loadCachedState() || defaultState(); finishStateLoad(); }
+    else { render(); }
   });
 }
 
@@ -1258,7 +1271,8 @@ function init(){
       currentUser = user;
       attachSharedListener();
     } else {
-      auth.signInAnonymously().catch(function(){
+      auth.signInAnonymously().catch(function(err){
+        syncError = (err && err.code) ? err.code : "auth-error";
         currentUser = null;
         STATE = loadCachedState() || defaultState();
         finishStateLoad();
