@@ -133,7 +133,7 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 }
 .weekbar button:hover{border-color:var(--accent); color:var(--accent)}
 .tabs{
-  display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-bottom:14px;
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-bottom:14px;
 }
 .tab{
   font:inherit; font-size:.85rem; font-weight:600; color:var(--ink-soft); text-align:center;
@@ -320,7 +320,8 @@ var DAYS = [
   {key:"mie", label:"Miércoles"},
   {key:"jue", label:"Jueves"},
   {key:"vie", label:"Viernes"},
-  {key:"sab", label:"Sábado"}
+  {key:"sab", label:"Sábado"},
+  {key:"dom", label:"Domingo"}
 ];
 var BASE_CATS = [
   {key:"deporte", label:"Deporte", builtin:true},
@@ -399,11 +400,11 @@ function weekRangeLabel(refDate){
   var jsDay = refDate.getDay();
   var offset = (jsDay+6)%7;
   var monday = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate()-offset);
-  var saturday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+5);
-  if(monday.getMonth()===saturday.getMonth()){
-    return "Semana del "+monday.getDate()+" al "+saturday.getDate()+" de "+MESES[monday.getMonth()];
+  var lastDay = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+6);
+  if(monday.getMonth()===lastDay.getMonth()){
+    return "Semana del "+monday.getDate()+" al "+lastDay.getDate()+" de "+MESES[monday.getMonth()];
   }
-  return "Semana del "+monday.getDate()+" de "+MESES[monday.getMonth()]+" al "+saturday.getDate()+" de "+MESES[saturday.getMonth()];
+  return "Semana del "+monday.getDate()+" de "+MESES[monday.getMonth()]+" al "+lastDay.getDate()+" de "+MESES[lastDay.getMonth()];
 }
 
 function isoWeekKey(d){
@@ -417,7 +418,7 @@ function isoWeekKey(d){
 
 function todayDayKey(){
   var jsDay = new Date().getDay(); // 0 sun .. 6 sat
-  var map = {1:"lun",2:"mar",3:"mie",4:"jue",5:"vie",6:"sab"};
+  var map = {1:"lun",2:"mar",3:"mie",4:"jue",5:"vie",6:"sab",0:"dom"};
   return map[jsDay] || null;
 }
 
@@ -615,6 +616,12 @@ function renderAgenda(){
       html += '</div>';
     });
     html += '</div>';
+  }
+
+  if(editingId===null && list.length>0){
+    html += '<div class="formcard" style="margin-top:14px"><h3>Copiar todas las actividades de '+dayLabel.toLowerCase()+' a otro día</h3><div class="formactions"><select id="copy-target" style="flex:1; font:inherit; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)">';
+    DAYS.forEach(function(d){ if(d.key!==selectedDay){ html += '<option value="'+d.key+'">'+d.label+'</option>'; } });
+    html += '</select><button type="button" class="btn soft" data-action="copy-day">📋 Copiar</button></div></div>';
   }
 
   if(editingId==="new"){
@@ -1138,6 +1145,24 @@ function onClick(ev){
     currentPageId = btn.getAttribute("data-page");
     noteMode = null;
     render();
+  } else if(action==="copy-day"){
+    var sel = document.getElementById("copy-target");
+    var target = sel ? sel.value : null;
+    var src = entriesForDay(selectedDay);
+    if(target && src.length){
+      var tl = DAYS.find(function(d){return d.key===target;}).label;
+      var existing = entriesForDay(target).length;
+      var msg = existing
+        ? tl+' ya tiene '+existing+' actividades. ¿Añadir también estas '+src.length+' (se mantienen las que ya tiene)?'
+        : '¿Copiar las '+src.length+' actividades al '+tl.toLowerCase()+'?';
+      if(confirm(msg)){
+        src.forEach(function(e){
+          STATE.entries.push({id:STATE.nextId++, day:target, start:e.start, dur:e.dur, name:e.name, cat:e.cat});
+        });
+        selectedDay = target;
+        persist();
+      }
+    }
   } else if(action==="backup-export"){
     exportBackup();
   } else if(action==="backup-restore-pick"){
