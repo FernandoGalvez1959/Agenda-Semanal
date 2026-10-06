@@ -225,6 +225,11 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 .catdel:hover{color:var(--danger)}
 footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-height:1.5}
 .authwrap{min-height:40vh; display:flex; align-items:center; justify-content:center; padding-block:24px}
+.catblock{margin-bottom:14px}
+.swatches{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center}
+.swatch{width:34px; height:34px; border-radius:50%; border:2px solid var(--surface); box-shadow:0 0 0 1px var(--line); cursor:pointer; padding:0}
+.swatch.sel{box-shadow:0 0 0 3px var(--ink)}
+.swatchpick{width:34px; height:34px; padding:0; border:1px solid var(--line); border-radius:50%; background:none; cursor:pointer}
 .catrow{display:flex; align-items:center; gap:10px; margin-bottom:8px}
 .catrow input[type=color]{width:40px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); cursor:pointer}
 .grouphead{font-size:.95rem; font-weight:600; color:var(--ink-soft); margin:16px 0 8px}
@@ -504,6 +509,7 @@ function getCategory(key){
   return found || BASE_CATS[0];
 }
 
+var PALETTE = ['#2f5d5a','#3f5a78','#4a6fa5','#6b4570','#a3402f','#c0572b','#9a6a24','#b08d1a','#5a7d2a','#2e8b57','#8a8a8a','#232420'];
 var BASE_COLORS = {deporte:"#2f5d5a", estudio:"#9a6a24", creativo:"#6b4570", lectura:"#3f5a78"};
 
 function catColor(cat){
@@ -682,14 +688,20 @@ function renderAgenda(){
 
   html += '<div class="formcard"><h3>Categorías y colores</h3>';
   allCategories().forEach(function(c){
-    html += '<div class="catrow"><input type="color" data-catcolor="'+c.key+'" value="'+catColorInput(c)+'" aria-label="Color de '+esc(c.label)+'"><span class="chip" style="'+catStyle(c)+'">'+esc(c.label)+'</span>';
+    var cur = catColorInput(c).toLowerCase();
+    html += '<div class="catblock"><div class="catrow"><span class="chip" style="'+catStyle(c)+'">'+esc(c.label)+'</span>';
     if(!c.builtin){
       html += ' <button type="button" class="catdel" data-action="delete-cat" data-cat="'+c.key+'" aria-label="Eliminar categoría '+esc(c.label)+'">×</button>';
     }
-    html += '</div>';
+    html += '</div><div class="swatches">';
+    PALETTE.forEach(function(col){
+      html += '<button type="button" class="swatch'+(col===cur?' sel':'')+'" style="background:'+col+'" data-action="set-cat-color" data-cat="'+c.key+'" data-color="'+col+'" aria-label="Color '+col+' para '+esc(c.label)+'"></button>';
+    });
+    html += '<input type="color" class="swatchpick" data-catcolor="'+c.key+'" value="'+cur+'" title="Otro color" aria-label="Otro color para '+esc(c.label)+'">';
+    html += '</div></div>';
   });
   html += '<div class="catrow" style="margin-top:12px"><input type="text" id="newcat-name" maxlength="24" placeholder="Nueva categoría" style="flex:1; font:inherit; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)"><input type="color" id="newcat-color" value="#4a6fa5"><button type="button" class="btn soft" data-action="add-cat">Añadir</button></div>';
-  html += '<p class="syncnote">Pulsa el cuadro de color de una categoría para cambiarlo.</p>';
+  html += '<p class="syncnote">Toca un círculo de color para cambiar el color de esa categoría (el último círculo abre más colores).</p>';
   html += '</div>';
 
   html += '<footer class="note">Toca el círculo para marcar una actividad como hecha.</footer>';
@@ -1211,6 +1223,11 @@ function onClick(ev){
         persist();
       }
     }
+  } else if(action==="set-cat-color"){
+    var sk = btn.getAttribute("data-cat"), sc = btn.getAttribute("data-color");
+    var su = STATE.categories.find(function(c){return c.key===sk;});
+    if(su){ su.color = sc; } else { STATE.catColors[sk] = sc; }
+    persist();
   } else if(action==="add-cat"){
     var cn = document.getElementById("newcat-name").value.trim();
     var cc = document.getElementById("newcat-color").value || "#4a6fa5";
