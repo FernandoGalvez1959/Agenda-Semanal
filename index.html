@@ -98,6 +98,7 @@
   --danger-soft:#452a24;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35);
 }
+[hidden]{display:none !important}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -582,7 +583,7 @@ function renderEntryForm(editing){
   h += '</select></div>';
   h += '</div>';
   h += '<div class="field-row" id="new-cat-fields" hidden>';
-  h += '<div class="field"><label for="f-newcat-name">Nombre de la categoría</label><input type="text" id="f-newcat-name" maxlength="24" placeholder="Ej. Voluntariado"></div>';
+  h += '<div class="field"><label for="f-newcat-name">Nombre de la nueva categoría</label><input type="text" id="f-newcat-name" maxlength="24" placeholder="Ej. Voluntariado"></div>';
   h += '<div class="field" style="max-width:100px"><label for="f-newcat-color">Color</label><input type="color" id="f-newcat-color" value="#4a6fa5"></div>';
   h += '</div>';
   h += '<div class="field-row">';
