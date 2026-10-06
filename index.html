@@ -225,6 +225,8 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 .catdel:hover{color:var(--danger)}
 footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-height:1.5}
 .authwrap{min-height:40vh; display:flex; align-items:center; justify-content:center; padding-block:24px}
+.catrow{display:flex; align-items:center; gap:10px; margin-bottom:8px}
+.catrow input[type=color]{width:40px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); cursor:pointer}
 .grouphead{font-size:.95rem; font-weight:600; color:var(--ink-soft); margin:16px 0 8px}
 .syncnote{font-size:.72rem; color:var(--ink-soft); margin-top:6px}
 .syncbadge{display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--ink-soft); margin-top:6px}
@@ -358,6 +360,7 @@ function normalizeState(s){
   if(!s.studies) s.studies = [];
   if(!s.pages) s.pages = [];
   if(!s.activityNames) s.activityNames = [];
+  if(!s.catColors || typeof s.catColors!=="object") s.catColors = {};
   if(!s.pageNotes || typeof s.pageNotes!=="object") s.pageNotes = {};
   if(typeof s.nextId !== "number") s.nextId = 1;
   return s;
@@ -501,12 +504,24 @@ function getCategory(key){
   return found || BASE_CATS[0];
 }
 
+var BASE_COLORS = {deporte:"#2f5d5a", estudio:"#9a6a24", creativo:"#6b4570", lectura:"#3f5a78"};
+
+function catColor(cat){
+  if(cat.builtin) return STATE.catColors[cat.key] || null;
+  return cat.color;
+}
+
+function catColorInput(cat){
+  return catColor(cat) || BASE_COLORS[cat.key] || "#4a6fa5";
+}
+
 function catStyle(cat){
-  if(cat.builtin){
+  var col = catColor(cat);
+  if(!col){
     return "background:var(--"+cat.key+"-soft);color:var(--"+cat.key+")";
   }
-  var rgb = hexToRgb(cat.color) || {r:100,g:100,b:100};
-  return "background:rgba("+rgb.r+","+rgb.g+","+rgb.b+",.16);color:"+cat.color+";box-shadow:inset 0 0 0 1px rgba("+rgb.r+","+rgb.g+","+rgb.b+",.35)";
+  var rgb = hexToRgb(col) || {r:100,g:100,b:100};
+  return "background:rgba("+rgb.r+","+rgb.g+","+rgb.b+",.16);color:"+col+";box-shadow:inset 0 0 0 1px rgba("+rgb.r+","+rgb.g+","+rgb.b+",.35)";
 }
 
 function ensureCurrentWeek(){
@@ -579,12 +594,7 @@ function renderEntryForm(editing){
   h += '</select></div>';
   h += '<div class="field"><label for="f-cat">Categoría</label><select id="f-cat">';
   allCategories().forEach(function(c){ h += '<option value="'+c.key+'"'+(c.key===f.cat?' selected':'')+'>'+esc(c.label)+'</option>'; });
-  h += '<option value="__new__">+ Nueva categoría…</option>';
   h += '</select></div>';
-  h += '</div>';
-  h += '<div class="field-row" id="new-cat-fields" hidden>';
-  h += '<div class="field"><label for="f-newcat-name">Nombre de la nueva categoría</label><input type="text" id="f-newcat-name" maxlength="24" placeholder="Ej. Voluntariado"></div>';
-  h += '<div class="field" style="max-width:100px"><label for="f-newcat-color">Color</label><input type="color" id="f-newcat-color" value="#4a6fa5"></div>';
   h += '</div>';
   h += '<div class="field-row">';
   h += '<div class="field"><label for="f-start">Hora inicio</label><select id="f-start">'+timeOptionsHtml(f.start)+'</select></div>';
@@ -670,15 +680,16 @@ function renderAgenda(){
     html += '<button type="button" class="addbtn" data-action="add">+ Añadir actividad a '+dayLabel.toLowerCase()+'</button>';
   }
 
-  html += '<div class="legend">';
+  html += '<div class="formcard"><h3>Categorías y colores</h3>';
   allCategories().forEach(function(c){
-    var dotStyle = c.builtin ? "background:var(--"+c.key+")" : "background:"+c.color;
-    html += '<span class="legend-item"><i style="'+dotStyle+'"></i>'+esc(c.label);
+    html += '<div class="catrow"><input type="color" data-catcolor="'+c.key+'" value="'+catColorInput(c)+'" aria-label="Color de '+esc(c.label)+'"><span class="chip" style="'+catStyle(c)+'">'+esc(c.label)+'</span>';
     if(!c.builtin){
       html += ' <button type="button" class="catdel" data-action="delete-cat" data-cat="'+c.key+'" aria-label="Eliminar categoría '+esc(c.label)+'">×</button>';
     }
-    html += '</span>';
+    html += '</div>';
   });
+  html += '<div class="catrow" style="margin-top:12px"><input type="text" id="newcat-name" maxlength="24" placeholder="Nueva categoría" style="flex:1; font:inherit; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)"><input type="color" id="newcat-color" value="#4a6fa5"><button type="button" class="btn soft" data-action="add-cat">Añadir</button></div>';
+  html += '<p class="syncnote">Pulsa el cuadro de color de una categoría para cambiarlo.</p>';
   html += '</div>';
 
   html += '<footer class="note">Toca el círculo para marcar una actividad como hecha.</footer>';
@@ -898,15 +909,6 @@ function saveForm(){
   var start = document.getElementById("f-start").value || "09:00";
   var dur = parseFloat(document.getElementById("f-dur").value);
   if(!name){ alert("Elige una actividad de la lista."); return; }
-
-  if(cat === "__new__"){
-    var newName = document.getElementById("f-newcat-name").value.trim();
-    var newColor = document.getElementById("f-newcat-color").value || "#4a6fa5";
-    if(!newName){ alert("Escribe un nombre para la nueva categoría."); return; }
-    var newKey = "c"+(STATE.nextId++);
-    STATE.categories.push({key:newKey, label:newName, color:newColor});
-    cat = newKey;
-  }
 
   if(editingId==="new"){
     STATE.entries.push({id:STATE.nextId++, day:day, start:start, dur:dur, name:name, cat:cat});
@@ -1209,6 +1211,12 @@ function onClick(ev){
         persist();
       }
     }
+  } else if(action==="add-cat"){
+    var cn = document.getElementById("newcat-name").value.trim();
+    var cc = document.getElementById("newcat-color").value || "#4a6fa5";
+    if(!cn){ alert("Escribe el nombre de la categoría."); return; }
+    STATE.categories.push({key:"c"+(STATE.nextId++), label:cn, color:cc});
+    persist();
   } else if(action==="backup-export"){
     exportBackup();
   } else if(action==="backup-restore-pick"){
@@ -1239,7 +1247,12 @@ function moveNoteBy(id, delta){
 }
 
 function onChange(ev){
-  if(ev.target && ev.target.id==="f-name"){
+  if(ev.target && ev.target.getAttribute && ev.target.getAttribute("data-catcolor")){
+    var ck = ev.target.getAttribute("data-catcolor"), cv = ev.target.value;
+    var cu = STATE.categories.find(function(c){return c.key===ck;});
+    if(cu){ cu.color = cv; } else { STATE.catColors[ck] = cv; }
+    persist();
+  } else if(ev.target && ev.target.id==="f-name"){
     var nf = document.getElementById("new-name-field");
     if(nf) nf.hidden = (ev.target.value !== "__new__");
     if(editingId==="new" && ev.target.value && ev.target.value!=="__new__"){
