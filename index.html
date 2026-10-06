@@ -575,10 +575,11 @@ function timeOptionsHtml(sel){
     return r;
   }
   function opts(list){ return list.map(function(t){ return '<option value="'+t+'"'+(t===sel?' selected':'')+'>'+t+'</option>'; }).join(""); }
-  var morning = range(6,14), afternoon = range(16,20);
+  var morning = range(6,13.75), midday = range(14,15.75), afternoon = range(16,20);
   var html = "";
-  if(morning.indexOf(sel)<0 && afternoon.indexOf(sel)<0){ html += '<option value="'+sel+'" selected>'+sel+'</option>'; }
+  if(morning.indexOf(sel)<0 && midday.indexOf(sel)<0 && afternoon.indexOf(sel)<0){ html += '<option value="'+sel+'" selected>'+sel+'</option>'; }
   html += '<optgroup label="Mañana (hasta las 14:00)">'+opts(morning)+'</optgroup>';
+  html += '<optgroup label="Mediodía (14:00 a 16:00)">'+opts(midday)+'</optgroup>';
   html += '<optgroup label="Tarde (16:00 a 20:00)">'+opts(afternoon)+'</optgroup>';
   return html;
 }
