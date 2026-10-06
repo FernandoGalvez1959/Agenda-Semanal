@@ -535,6 +535,42 @@ function headerHtml(){
   return html;
 }
 
+function renderEntryForm(editing){
+  var h = "";
+  var f = editing || {day:selectedDay, start:"09:00", dur:0.5, name:"", cat:"deporte"};
+  h += '<form class="formcard" id="entry-form">';
+  h += '<h3>'+(editing?"Editar actividad":"Nueva actividad")+'</h3>';
+  h += '<div class="field"><label for="f-name">Nombre</label><input type="text" id="f-name" value="'+esc(f.name)+'" required maxlength="60" placeholder="Ej. Meditación"></div>';
+  h += '<div class="field-row">';
+  h += '<div class="field"><label for="f-day">Día</label><select id="f-day">';
+  DAYS.forEach(function(d){ h += '<option value="'+d.key+'"'+(d.key===f.day?' selected':'')+'>'+d.label+'</option>'; });
+  h += '</select></div>';
+  h += '<div class="field"><label for="f-cat">Categoría</label><select id="f-cat">';
+  allCategories().forEach(function(c){ h += '<option value="'+c.key+'"'+(c.key===f.cat?' selected':'')+'>'+esc(c.label)+'</option>'; });
+  h += '<option value="__new__">+ Nueva categoría…</option>';
+  h += '</select></div>';
+  h += '</div>';
+  h += '<div class="field-row" id="new-cat-fields" hidden>';
+  h += '<div class="field"><label for="f-newcat-name">Nombre de la categoría</label><input type="text" id="f-newcat-name" maxlength="24" placeholder="Ej. Voluntariado"></div>';
+  h += '<div class="field" style="max-width:100px"><label for="f-newcat-color">Color</label><input type="color" id="f-newcat-color" value="#4a6fa5"></div>';
+  h += '</div>';
+  h += '<div class="field-row">';
+  h += '<div class="field"><label for="f-start">Hora inicio</label><input type="time" id="f-start" step="900" value="'+f.start+'"></div>';
+  h += '<div class="field"><label for="f-dur">Duración</label><select id="f-dur">';
+  [0.25,0.5,0.75,1,1.5,2,2.5,3,3.5,4].forEach(function(x){
+    h += '<option value="'+x+'"'+(x===f.dur?' selected':'')+'>'+fmtDur(x)+'</option>';
+  });
+  h += '</select></div>';
+  h += '</div>';
+  h += '<div class="formactions">';
+  h += '<button type="submit" class="btn primary">Guardar</button>';
+  h += '<button type="button" class="btn ghost" data-action="cancel-form">Cancelar</button>';
+  if(editing){ h += '<button type="button" class="btn danger" data-action="delete" data-id="'+editing.id+'">Eliminar</button>'; }
+  h += '</div>';
+  h += '</form>';
+  return h;
+}
+
 function renderAgenda(){
   var html = "";
   var todayKey = todayDayKey();
@@ -562,6 +598,7 @@ function renderAgenda(){
   } else {
     html += '<div class="list">';
     list.forEach(function(e){
+      if(editingId===e.id){ html += renderEntryForm(e); return; }
       var done = !!STATE.done[e.id];
       var end = addMinutes(e.start, Math.round(e.dur*60));
       var cat = getCategory(e.cat);
@@ -580,41 +617,10 @@ function renderAgenda(){
     html += '</div>';
   }
 
-  if(editingId===null){
+  if(editingId==="new"){
+    html += renderEntryForm(null);
+  } else if(editingId===null){
     html += '<button type="button" class="addbtn" data-action="add">+ Añadir actividad a '+dayLabel.toLowerCase()+'</button>';
-  } else {
-    var editing = editingId==="new" ? null : STATE.entries.find(function(e){return e.id===editingId;});
-    var f = editing || {day:selectedDay, start:"09:00", dur:0.5, name:"", cat:"deporte"};
-    html += '<form class="formcard" id="entry-form">';
-    html += '<h3>'+(editing?"Editar actividad":"Nueva actividad")+'</h3>';
-    html += '<div class="field"><label for="f-name">Nombre</label><input type="text" id="f-name" value="'+esc(f.name)+'" required maxlength="60" placeholder="Ej. Meditación"></div>';
-    html += '<div class="field-row">';
-    html += '<div class="field"><label for="f-day">Día</label><select id="f-day">';
-    DAYS.forEach(function(d){ html += '<option value="'+d.key+'"'+(d.key===f.day?' selected':'')+'>'+d.label+'</option>'; });
-    html += '</select></div>';
-    html += '<div class="field"><label for="f-cat">Categoría</label><select id="f-cat">';
-    allCategories().forEach(function(c){ html += '<option value="'+c.key+'"'+(c.key===f.cat?' selected':'')+'>'+esc(c.label)+'</option>'; });
-    html += '<option value="__new__">+ Nueva categoría…</option>';
-    html += '</select></div>';
-    html += '</div>';
-    html += '<div class="field-row" id="new-cat-fields" hidden>';
-    html += '<div class="field"><label for="f-newcat-name">Nombre de la categoría</label><input type="text" id="f-newcat-name" maxlength="24" placeholder="Ej. Voluntariado"></div>';
-    html += '<div class="field" style="max-width:100px"><label for="f-newcat-color">Color</label><input type="color" id="f-newcat-color" value="#4a6fa5"></div>';
-    html += '</div>';
-    html += '<div class="field-row">';
-    html += '<div class="field"><label for="f-start">Hora inicio</label><input type="time" id="f-start" step="900" value="'+f.start+'"></div>';
-    html += '<div class="field"><label for="f-dur">Duración</label><select id="f-dur">';
-    [0.25,0.5,0.75,1,1.5,2,2.5,3,3.5,4].forEach(function(h){
-      html += '<option value="'+h+'"'+(h===f.dur?' selected':'')+'>'+fmtDur(h)+'</option>';
-    });
-    html += '</select></div>';
-    html += '</div>';
-    html += '<div class="formactions">';
-    html += '<button type="submit" class="btn primary">Guardar</button>';
-    html += '<button type="button" class="btn ghost" data-action="cancel-form">Cancelar</button>';
-    if(editing){ html += '<button type="button" class="btn danger" data-action="delete" data-id="'+editing.id+'">Eliminar</button>'; }
-    html += '</div>';
-    html += '</form>';
   }
 
   html += '<div class="legend">';
