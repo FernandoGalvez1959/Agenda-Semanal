@@ -224,6 +224,7 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 .catdel:hover{color:var(--danger)}
 footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-height:1.5}
 .authwrap{min-height:40vh; display:flex; align-items:center; justify-content:center; padding-block:24px}
+.grouphead{font-size:.95rem; font-weight:600; color:var(--ink-soft); margin:16px 0 8px}
 .syncnote{font-size:.72rem; color:var(--ink-soft); margin-top:6px}
 .syncbadge{display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--ink-soft); margin-top:6px}
 .syncbadge .dot{width:8px; height:8px; border-radius:50%; flex:0 0 auto}
@@ -355,6 +356,7 @@ function normalizeState(s){
   if(!s.notes) s.notes = [];
   if(!s.studies) s.studies = [];
   if(!s.pages) s.pages = [];
+  if(!s.activityNames) s.activityNames = [];
   if(!s.pageNotes || typeof s.pageNotes!=="object") s.pageNotes = {};
   if(typeof s.nextId !== "number") s.nextId = 1;
   return s;
@@ -536,12 +538,40 @@ function headerHtml(){
   return html;
 }
 
+function activityNames(){
+  var seen = {}, out = [];
+  STATE.activityNames.concat(STATE.entries.map(function(e){return e.name;})).forEach(function(n){
+    if(n && !seen[n]){ seen[n]=true; out.push(n); }
+  });
+  return out.sort(function(a,b){ return a.localeCompare(b,"es"); });
+}
+
+function timeOptionsHtml(sel){
+  function range(fromH,toH){
+    var r = [];
+    for(var m=fromH*60; m<=toH*60; m+=15){ r.push(pad(Math.floor(m/60))+":"+pad(m%60)); }
+    return r;
+  }
+  function opts(list){ return list.map(function(t){ return '<option value="'+t+'"'+(t===sel?' selected':'')+'>'+t+'</option>'; }).join(""); }
+  var morning = range(6,14), afternoon = range(16,20);
+  var html = "";
+  if(morning.indexOf(sel)<0 && afternoon.indexOf(sel)<0){ html += '<option value="'+sel+'" selected>'+sel+'</option>'; }
+  html += '<optgroup label="Mañana (hasta las 14:00)">'+opts(morning)+'</optgroup>';
+  html += '<optgroup label="Tarde (16:00 a 20:00)">'+opts(afternoon)+'</optgroup>';
+  return html;
+}
+
 function renderEntryForm(editing){
   var h = "";
   var f = editing || {day:selectedDay, start:"09:00", dur:0.5, name:"", cat:"deporte"};
   h += '<form class="formcard" id="entry-form">';
   h += '<h3>'+(editing?"Editar actividad":"Nueva actividad")+'</h3>';
-  h += '<div class="field"><label for="f-name">Nombre</label><input type="text" id="f-name" value="'+esc(f.name)+'" required maxlength="60" placeholder="Ej. Meditación"></div>';
+  h += '<div class="field"><label for="f-name">Actividad</label><select id="f-name">';
+  if(!editing){ h += '<option value="">— Elige una actividad —</option>'; }
+  activityNames().forEach(function(n){ h += '<option value="'+esc(n)+'"'+(editing && n===f.name?' selected':'')+'>'+esc(n)+'</option>'; });
+  h += '<option value="__new__">+ Nueva actividad…</option>';
+  h += '</select></div>';
+  h += '<div class="field" id="new-name-field" hidden><label for="f-newname">Nombre de la nueva actividad</label><input type="text" id="f-newname" maxlength="60" placeholder="Ej. Meditación"></div>';
   h += '<div class="field-row">';
   h += '<div class="field"><label for="f-day">Día</label><select id="f-day">';
   DAYS.forEach(function(d){ h += '<option value="'+d.key+'"'+(d.key===f.day?' selected':'')+'>'+d.label+'</option>'; });
@@ -556,7 +586,7 @@ function renderEntryForm(editing){
   h += '<div class="field" style="max-width:100px"><label for="f-newcat-color">Color</label><input type="color" id="f-newcat-color" value="#4a6fa5"></div>';
   h += '</div>';
   h += '<div class="field-row">';
-  h += '<div class="field"><label for="f-start">Hora inicio</label><input type="time" id="f-start" step="900" value="'+f.start+'"></div>';
+  h += '<div class="field"><label for="f-start">Hora inicio</label><select id="f-start">'+timeOptionsHtml(f.start)+'</select></div>';
   h += '<div class="field"><label for="f-dur">Duración</label><select id="f-dur">';
   [0.25,0.5,0.75,1,1.5,2,2.5,3,3.5,4].forEach(function(x){
     h += '<option value="'+x+'"'+(x===f.dur?' selected':'')+'>'+fmtDur(x)+'</option>';
@@ -597,8 +627,16 @@ function renderAgenda(){
   if(list.length===0){
     html += '<p class="empty">No hay actividades este día todavía.</p>';
   } else {
-    html += '<div class="list">';
-    list.forEach(function(e){
+    var groups = [
+      {t:'🌅 Mañana (hasta las 14:00)', f:function(e){return e.start<'14:00';}},
+      {t:'Mediodía (14:00 a 16:00)', f:function(e){return e.start>='14:00' && e.start<'16:00';}},
+      {t:'🌇 Tarde (16:00 a 20:00)', f:function(e){return e.start>='16:00';}}
+    ];
+    groups.forEach(function(g){
+    var items = list.filter(g.f);
+    if(!items.length) return;
+    html += '<h3 class="grouphead">'+g.t+'</h3><div class="list">';
+    items.forEach(function(e){
       if(editingId===e.id){ html += renderEntryForm(e); return; }
       var done = !!STATE.done[e.id];
       var end = addMinutes(e.start, Math.round(e.dur*60));
@@ -616,6 +654,7 @@ function renderAgenda(){
       html += '</div>';
     });
     html += '</div>';
+    });
   }
 
   if(editingId===null && list.length>0){
@@ -846,12 +885,18 @@ function attachFormListeners(){
 }
 
 function saveForm(){
-  var name = document.getElementById("f-name").value.trim();
+  var name = document.getElementById("f-name").value;
+  if(name === "__new__"){
+    name = document.getElementById("f-newname").value.trim();
+    if(!name){ alert("Escribe el nombre de la nueva actividad."); return; }
+    if(STATE.activityNames.indexOf(name)<0){ STATE.activityNames.push(name); }
+  }
+  name = name.trim();
   var day = document.getElementById("f-day").value;
   var cat = document.getElementById("f-cat").value;
   var start = document.getElementById("f-start").value || "09:00";
   var dur = parseFloat(document.getElementById("f-dur").value);
-  if(!name) return;
+  if(!name){ alert("Elige una actividad de la lista."); return; }
 
   if(cat === "__new__"){
     var newName = document.getElementById("f-newcat-name").value.trim();
@@ -1193,7 +1238,15 @@ function moveNoteBy(id, delta){
 }
 
 function onChange(ev){
-  if(ev.target && ev.target.id==="f-cat"){
+  if(ev.target && ev.target.id==="f-name"){
+    var nf = document.getElementById("new-name-field");
+    if(nf) nf.hidden = (ev.target.value !== "__new__");
+    if(editingId==="new" && ev.target.value && ev.target.value!=="__new__"){
+      var prev = STATE.entries.filter(function(e){return e.name===ev.target.value;}).pop();
+      var cs = document.getElementById("f-cat");
+      if(prev && cs){ cs.value = prev.cat; }
+    }
+  } else if(ev.target && ev.target.id==="f-cat"){
     var wrap = document.getElementById("new-cat-fields");
     if(wrap) wrap.hidden = (ev.target.value !== "__new__");
   } else if(ev.target && ev.target.id==="backup-file-input"){
