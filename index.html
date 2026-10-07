@@ -232,6 +232,9 @@ footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-heigh
 .swatchpick{width:34px; height:34px; padding:0; border:1px solid var(--line); border-radius:50%; background:none; cursor:pointer}
 .catrow{display:flex; align-items:center; gap:10px; margin-bottom:8px}
 .catrow input[type=color]{width:40px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); cursor:pointer}
+.noteentry{display:block}
+.notehead{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px}
+.bullet{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:baseline}
 .grouphead{font-size:.95rem; font-weight:600; color:var(--ink-soft); margin:16px 0 8px}
 .syncnote{font-size:.72rem; color:var(--ink-soft); margin-top:6px}
 .syncbadge{display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--ink-soft); margin-top:6px}
@@ -663,7 +666,7 @@ function renderAgenda(){
       html += '<span class="check"><input type="checkbox" '+(done?'checked':'')+' data-action="toggle" data-id="'+e.id+'" aria-label="Marcar '+esc(e.name)+' como hecho"></span>';
       html += '<div class="body">';
       html += '<div class="row1"><span class="time">'+e.start+'–'+end+'</span><span class="chip" style="'+catStyle(cat)+'">'+esc(cat.label)+'</span></div>';
-      html += '<div class="name">'+esc(e.name)+'</div>';
+      html += '<div class="name"><span class="bullet" style="background:'+(catColor(cat) || 'var(--'+cat.key+')')+'"></span>'+esc(e.name)+'</div>';
       html += '</div>';
       html += '<div class="actions">';
       html += '<button type="button" class="iconbtn" data-action="edit" data-id="'+e.id+'" aria-label="Editar '+esc(e.name)+'" title="Editar">✏️</button>';
@@ -758,22 +761,19 @@ function renderNotesListHtml(notesArr){
         html += renderNoteForm(n);
         return;
       }
-      html += '<div class="entry">';
-      html += '<div class="body">';
-      html += '<div class="row1"><span class="time">'+fmtNoteDate(n.createdAt)+'</span></div>';
+      html += '<div class="entry noteentry">';
+      html += '<div class="notehead"><span class="time">'+fmtNoteDate(n.createdAt)+'</span><div class="actions">';
+      if(i>0){ html += '<button type="button" class="iconbtn" data-action="note-moveup" data-id="'+n.id+'" title="Subir">⬆️</button>'; }
+      if(i<notesArr.length-1){ html += '<button type="button" class="iconbtn" data-action="note-movedown" data-id="'+n.id+'" title="Bajar">⬇️</button>'; }
+      html += '<button type="button" class="iconbtn" data-action="edit-note" data-id="'+n.id+'" title="Editar">✏️</button>';
+      html += '<button type="button" class="iconbtn" data-action="delete-note" data-id="'+n.id+'" title="Eliminar">🗑️</button>';
+      html += '</div></div>';
       if(n.title){ html += '<div class="name">'+esc(n.title)+'</div>'; }
       if(n.type==="text"){
         html += '<div class="note-text">'+mdBold(n.text)+'</div>';
       } else {
         html += '<audio controls src="'+n.audio+'"></audio>';
       }
-      html += '</div>';
-      html += '<div class="actions">';
-      if(i>0){ html += '<button type="button" class="iconbtn" data-action="note-moveup" data-id="'+n.id+'" title="Subir">⬆️</button>'; }
-      if(i<notesArr.length-1){ html += '<button type="button" class="iconbtn" data-action="note-movedown" data-id="'+n.id+'" title="Bajar">⬇️</button>'; }
-      html += '<button type="button" class="iconbtn" data-action="edit-note" data-id="'+n.id+'" title="Editar">✏️</button>';
-      html += '<button type="button" class="iconbtn" data-action="delete-note" data-id="'+n.id+'" title="Eliminar">🗑️</button>';
-      html += '</div>';
       html += '</div>';
     });
     html += '</div>';
