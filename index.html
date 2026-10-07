@@ -232,6 +232,9 @@ footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-heigh
 .swatchpick{width:34px; height:34px; padding:0; border:1px solid var(--line); border-radius:50%; background:none; cursor:pointer}
 .catrow{display:flex; align-items:center; gap:10px; margin-bottom:8px}
 .catrow input[type=color]{width:40px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); cursor:pointer}
+.note-text.notelines{white-space:normal}
+.nline{display:flex; align-items:flex-start; gap:8px; margin-top:4px}
+.nline .bullet{flex:0 0 auto; width:7px; height:7px; margin:.55em 0 0 0; background:var(--accent)}
 .noteentry{display:block}
 .notehead{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px}
 .bullet{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:baseline}
@@ -486,6 +489,12 @@ function esc(str){
   var d = document.createElement("div");
   d.textContent = str;
   return d.innerHTML;
+}
+
+function noteLinesHtml(text){
+  return String(text).split(/\r?\n/).filter(function(l){return l.trim()!=="";}).map(function(l){
+    return '<div class="nline"><span class="bullet"></span><span>'+mdBold(l)+'</span></div>';
+  }).join("");
 }
 
 function mdBold(str){
@@ -762,7 +771,7 @@ function renderNotesListHtml(notesArr){
         return;
       }
       html += '<div class="entry noteentry">';
-      html += '<div class="notehead"><span class="time"><span class="bullet" style="background:var(--accent)"></span>'+fmtNoteDate(n.createdAt)+'</span><div class="actions">';
+      html += '<div class="notehead"><span class="time">'+fmtNoteDate(n.createdAt)+'</span><div class="actions">';
       if(i>0){ html += '<button type="button" class="iconbtn" data-action="note-moveup" data-id="'+n.id+'" title="Subir">⬆️</button>'; }
       if(i<notesArr.length-1){ html += '<button type="button" class="iconbtn" data-action="note-movedown" data-id="'+n.id+'" title="Bajar">⬇️</button>'; }
       html += '<button type="button" class="iconbtn" data-action="edit-note" data-id="'+n.id+'" title="Editar">✏️</button>';
@@ -770,7 +779,7 @@ function renderNotesListHtml(notesArr){
       html += '</div></div>';
       if(n.title){ html += '<div class="name">'+esc(n.title)+'</div>'; }
       if(n.type==="text"){
-        html += '<div class="note-text">'+mdBold(n.text)+'</div>';
+        html += '<div class="note-text notelines">'+noteLinesHtml(n.text)+'</div>';
       } else {
         html += '<audio controls src="'+n.audio+'"></audio>';
       }
