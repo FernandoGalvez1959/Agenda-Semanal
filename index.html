@@ -742,6 +742,7 @@ function renderNoteForm(editing){
     html += '<button type="button" class="btn ghost" data-action="note-bold" title="Negrita" style="font-weight:800">N</button>';
     html += '<button type="button" class="btn ghost" data-action="note-strike" title="Tachado" style="text-decoration:line-through">T</button>';
     html += '</div>';
+    html += '<div class="syncnote" style="margin:0 0 6px">Selecciona el texto y pulsa N (negrita) o T (tachado). Cada línea lleva su punto.</div>';
     html += '<textarea id="note-text" rows="4" placeholder="Escribe tu nota…">'+(editing?esc(editing.text):"")+'</textarea></div>';
   }
   html += '<div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div>';
@@ -1071,6 +1072,32 @@ function persist(){
   }
 }
 
+var noteSel = {s:0, e:0};
+
+document.addEventListener("selectionchange", function(){
+  var t = document.activeElement;
+  if(t && t.id==="note-text"){ noteSel = {s:t.selectionStart, e:t.selectionEnd}; }
+});
+
+function wrapNoteSelection(mark){
+  var ta = document.getElementById("note-text");
+  if(!ta) return;
+  var val = ta.value;
+  var st = Math.min(noteSel.s, val.length), en = Math.min(noteSel.e, val.length);
+  var ins, selStart, selEnd;
+  if(st===en){
+    ins = mark+"texto"+mark;
+    ta.value = val.slice(0,st) + ins + val.slice(en);
+    selStart = st+mark.length; selEnd = selStart+5;
+  } else {
+    ta.value = val.slice(0,st) + mark + val.slice(st,en) + mark + val.slice(en);
+    selStart = st; selEnd = en + mark.length*2;
+  }
+  ta.focus();
+  try{ ta.setSelectionRange(selStart, selEnd); }catch(e){}
+  noteSel = {s:selStart, e:selEnd};
+}
+
 function onClick(ev){
   var btn = ev.target.closest("[data-action]");
   if(!btn) return;
@@ -1140,38 +1167,8 @@ function onClick(ev){
     editingNoteId = id;
     noteMode = "write";
     render();
-  } else if(action==="note-bold"){
-    var ta = document.getElementById("note-text");
-    if(ta){
-      var start = ta.selectionStart, end = ta.selectionEnd, val = ta.value;
-      if(start===end){
-        var ins = "**texto**";
-        ta.value = val.slice(0,start) + ins + val.slice(end);
-        ta.focus();
-        ta.setSelectionRange(start+2, start+7);
-      } else {
-        var sel = val.slice(start,end);
-        ta.value = val.slice(0,start) + "**"+sel+"**" + val.slice(end);
-        ta.focus();
-        ta.setSelectionRange(start, end+4);
-      }
-    }
-  } else if(action==="note-strike"){
-    var ta2 = document.getElementById("note-text");
-    if(ta2){
-      var start2 = ta2.selectionStart, end2 = ta2.selectionEnd, val2 = ta2.value;
-      if(start2===end2){
-        var ins2 = "~~texto~~";
-        ta2.value = val2.slice(0,start2) + ins2 + val2.slice(end2);
-        ta2.focus();
-        ta2.setSelectionRange(start2+2, start2+7);
-      } else {
-        var sel2 = val2.slice(start2,end2);
-        ta2.value = val2.slice(0,start2) + "~~"+sel2+"~~" + val2.slice(end2);
-        ta2.focus();
-        ta2.setSelectionRange(start2, end2+4);
-      }
-    }
+  } else if(action==="note-bold" || action==="note-strike"){
+    wrapNoteSelection(action==="note-bold" ? "**" : "~~");
   } else if(action==="delete-note"){
     if(confirm("¿Eliminar esta nota?")){
       setCurrentNotesArray(currentNotesArray().filter(function(n){return n.id!==id;}));
