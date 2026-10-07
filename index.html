@@ -172,7 +172,7 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 .entry audio{width:100%; margin-top:6px; height:36px}
 .chip{
   font-size:.68rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
-  padding:3px 8px; border-radius:999px; white-space:nowrap;
+  padding:3px 8px; border-radius:999px; white-space:normal; max-width:100%; overflow-wrap:anywhere;
 }
 .entry .actions{flex:0 0 auto; display:flex; gap:4px}
 .iconbtn{
@@ -720,7 +720,7 @@ function renderAgenda(){
     });
     html += '<input type="color" class="swatchpick" data-catcolor="'+cur.key+'" value="'+curCol+'" title="Otro color" aria-label="Otro color">';
     html += '</div>';
-    html += '<div class="catrow" style="margin-top:10px"><input type="text" id="newcat-name" maxlength="24" placeholder="Nueva categoría" style="flex:1; min-width:0; font:inherit; padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)"><input type="color" id="newcat-color" value="#4a6fa5" style="width:36px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2)"><button type="button" class="btn soft" data-action="add-cat" style="padding:8px 12px">Añadir</button></div>';
+    html += '<div class="catrow" style="margin-top:10px"><input type="text" id="newcat-name" maxlength="60" placeholder="Nueva categoría" style="flex:1; min-width:0; font:inherit; padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)"><input type="color" id="newcat-color" value="#4a6fa5" style="width:36px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2)"><button type="button" class="btn soft" data-action="add-cat" style="padding:8px 12px">Añadir</button></div>';
     html += '</div>';
   }
 
