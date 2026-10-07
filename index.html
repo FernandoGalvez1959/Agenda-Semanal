@@ -744,7 +744,7 @@ function renderNoteForm(editing){
     html += '<button type="button" class="btn ghost" data-action="note-strike" title="Tachado" style="text-decoration:line-through">T</button>';
     html += '</div>';
     html += '<div class="syncnote" style="margin:0 0 6px">Selecciona el texto y pulsa N (negrita) o T (tachado). Cada línea lleva su punto.</div>';
-    html += '<textarea id="note-text" rows="4" placeholder="Escribe tu nota…">'+(editing?esc(editing.text):"")+'</textarea></div>';
+    html += '<textarea id="note-text" rows="10" style="min-height:260px; font-size:1rem; line-height:1.5" placeholder="Escribe tu nota…">'+(editing?esc(editing.text):"")+'</textarea></div>';
   }
   html += '<div class="formactions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-action="note-cancel">Cancelar</button></div>';
   html += '</form>';
@@ -923,6 +923,12 @@ function render(){
 function attachFormListeners(){
   var ef = document.getElementById("entry-form");
   if(ef){ ef.addEventListener("submit", function(ev){ ev.preventDefault(); saveForm(); }); }
+  var nt = document.getElementById("note-text");
+  if(nt){
+    var grow = function(){ nt.style.height = "auto"; nt.style.height = Math.max(260, nt.scrollHeight+4)+"px"; };
+    nt.addEventListener("input", grow);
+    grow();
+  }
   var nf = document.getElementById("note-form");
   if(nf){ nf.addEventListener("submit", function(ev){ ev.preventDefault(); saveNoteText(); }); }
   var sf = document.getElementById("study-form");
