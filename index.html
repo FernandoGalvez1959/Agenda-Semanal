@@ -373,6 +373,7 @@ function normalizeState(s){
   if(!s.pages) s.pages = [];
   if(!s.activityNames) s.activityNames = [];
   if(!s.hiddenCats) s.hiddenCats = [];
+  if(!s.hiddenActivities) s.hiddenActivities = [];
   if(!s.catColors || typeof s.catColors!=="object") s.catColors = {};
   if(!s.pageNotes || typeof s.pageNotes!=="object") s.pageNotes = {};
   if(typeof s.nextId !== "number") s.nextId = 1;
@@ -577,7 +578,7 @@ function headerHtml(){
 function activityNames(){
   var seen = {}, out = [];
   STATE.activityNames.concat(STATE.entries.map(function(e){return e.name;})).forEach(function(n){
-    if(n && !seen[n]){ seen[n]=true; out.push(n); }
+    if(n && !seen[n] && STATE.hiddenActivities.indexOf(n)<0){ seen[n]=true; out.push(n); }
   });
   return out.sort(function(a,b){ return a.localeCompare(b,"es"); });
 }
@@ -603,11 +604,13 @@ function renderEntryForm(editing){
   var f = editing || {day:selectedDay, start:"09:00", dur:0.5, name:"", cat:"deporte"};
   h += '<form class="formcard" id="entry-form">';
   h += '<h3>'+(editing?"Editar actividad":"Nueva actividad")+'</h3>';
-  h += '<div class="field"><label for="f-name">Actividad</label><select id="f-name">';
+  h += '<div class="field"><label for="f-name">Actividad</label><div style="display:flex; gap:8px"><select id="f-name" style="flex:1; min-width:0">';
   if(!editing){ h += '<option value="">— Elige una actividad —</option>'; }
-  activityNames().forEach(function(n){ h += '<option value="'+esc(n)+'"'+(editing && n===f.name?' selected':'')+'>'+esc(n)+'</option>'; });
+  var anames = activityNames();
+  if(editing && anames.indexOf(f.name)<0){ anames.push(f.name); }
+  anames.forEach(function(n){ h += '<option value="'+esc(n)+'"'+(editing && n===f.name?' selected':'')+'>'+esc(n)+'</option>'; });
   h += '<option value="__new__">+ Nueva actividad…</option>';
-  h += '</select></div>';
+  h += '</select><button type="button" class="btn danger" data-action="remove-activity" title="Quitar esta actividad de la lista" style="padding:8px 12px">🗑️</button></div></div>';
   h += '<div class="field" id="new-name-field" hidden><label for="f-newname">Nombre de la nueva actividad</label><input type="text" id="f-newname" maxlength="60" placeholder="Ej. Meditación"></div>';
   h += '<div class="field-row">';
   h += '<div class="field"><label for="f-day">Día</label><select id="f-day">';
@@ -928,6 +931,7 @@ function saveForm(){
     name = document.getElementById("f-newname").value.trim();
     if(!name){ alert("Escribe el nombre de la nueva actividad."); return; }
     if(STATE.activityNames.indexOf(name)<0){ STATE.activityNames.push(name); }
+    STATE.hiddenActivities = STATE.hiddenActivities.filter(function(x){return x!==name;});
   }
   name = name.trim();
   var day = document.getElementById("f-day").value;
@@ -1246,6 +1250,19 @@ function onClick(ev){
     var su = STATE.categories.find(function(c){return c.key===sk;});
     if(su){ su.color = sc; } else { STATE.catColors[sk] = sc; }
     persist();
+  } else if(action==="remove-activity"){
+    var fsel = document.getElementById("f-name");
+    var fv = fsel ? fsel.value : "";
+    if(!fv || fv==="__new__"){
+      alert("Elige primero en la lista la actividad que quieres quitar.");
+    } else if(confirm("¿Quitar «"+fv+"» de la lista de actividades? Las que ya tengas puestas en la agenda no se borran.")){
+      if(STATE.hiddenActivities.indexOf(fv)<0){ STATE.hiddenActivities.push(fv); }
+      STATE.activityNames = STATE.activityNames.filter(function(x){return x!==fv;});
+      saveCachedState();
+      if(dbRef){ dbRef.set(STATE).catch(function(){}); }
+      for(var oi=fsel.options.length-1; oi>=0; oi--){ if(fsel.options[oi].value===fv){ fsel.remove(oi); } }
+      fsel.value = "";
+    }
   } else if(action==="toggle-cat-panel"){
     catPanelOpen = !catPanelOpen;
     render();
