@@ -666,7 +666,7 @@ function renderAgenda(){
       html += '<span class="check"><input type="checkbox" '+(done?'checked':'')+' data-action="toggle" data-id="'+e.id+'" aria-label="Marcar '+esc(e.name)+' como hecho"></span>';
       html += '<div class="body">';
       html += '<div class="row1"><span class="time">'+e.start+'–'+end+'</span><span class="chip" style="'+catStyle(cat)+'">'+esc(cat.label)+'</span></div>';
-      html += '<div class="name"><span class="bullet" style="background:'+(catColor(cat) || 'var(--'+cat.key+')')+'"></span>'+esc(e.name)+'</div>';
+      html += '<div class="name">'+esc(e.name)+'</div>';
       html += '</div>';
       html += '<div class="actions">';
       html += '<button type="button" class="iconbtn" data-action="edit" data-id="'+e.id+'" aria-label="Editar '+esc(e.name)+'" title="Editar">✏️</button>';
@@ -762,7 +762,7 @@ function renderNotesListHtml(notesArr){
         return;
       }
       html += '<div class="entry noteentry">';
-      html += '<div class="notehead"><span class="time">'+fmtNoteDate(n.createdAt)+'</span><div class="actions">';
+      html += '<div class="notehead"><span class="time"><span class="bullet" style="background:var(--accent)"></span>'+fmtNoteDate(n.createdAt)+'</span><div class="actions">';
       if(i>0){ html += '<button type="button" class="iconbtn" data-action="note-moveup" data-id="'+n.id+'" title="Subir">⬆️</button>'; }
       if(i<notesArr.length-1){ html += '<button type="button" class="iconbtn" data-action="note-movedown" data-id="'+n.id+'" title="Bajar">⬇️</button>'; }
       html += '<button type="button" class="iconbtn" data-action="edit-note" data-id="'+n.id+'" title="Editar">✏️</button>';
