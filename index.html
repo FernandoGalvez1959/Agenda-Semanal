@@ -660,7 +660,7 @@ function renderAgenda(){
   } else {
     var groups = [
       {t:'🌅 Mañana (hasta las 14:00)', f:function(e){return e.start<'14:00';}},
-      {t:'Mediodía (14:00 a 16:00)', f:function(e){return e.start>='14:00' && e.start<'16:00';}},
+      {t:'☀️ Mediodía (14:00 a 16:00)', f:function(e){return e.start>='14:00' && e.start<'16:00';}},
       {t:'🌇 Tarde (16:00 a 20:00)', f:function(e){return e.start>='16:00';}}
     ];
     groups.forEach(function(g){
