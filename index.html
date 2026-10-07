@@ -575,9 +575,11 @@ function headerHtml(){
   return html;
 }
 
+var DEFAULT_ACTIVITIES = ["Gimnasia en casa","Estudio de idiomas","Tiro con arco","Estudio de piano","Estudio de fotografía","Estudio de teatro","Escritura","Lectura","Magia","Bicicleta"];
+
 function activityNames(){
   var seen = {}, out = [];
-  STATE.activityNames.concat(STATE.entries.map(function(e){return e.name;})).forEach(function(n){
+  DEFAULT_ACTIVITIES.concat(STATE.activityNames, STATE.entries.map(function(e){return e.name;})).forEach(function(n){
     if(n && !seen[n] && STATE.hiddenActivities.indexOf(n)<0){ seen[n]=true; out.push(n); }
   });
   return out.sort(function(a,b){ return a.localeCompare(b,"es"); });
@@ -934,6 +936,7 @@ function saveForm(){
     STATE.hiddenActivities = STATE.hiddenActivities.filter(function(x){return x!==name;});
   }
   name = name.trim();
+  if(name && STATE.activityNames.indexOf(name)<0){ STATE.activityNames.push(name); }
   var day = document.getElementById("f-day").value;
   var cat = document.getElementById("f-cat").value;
   var start = document.getElementById("f-start").value || "09:00";
@@ -1097,6 +1100,8 @@ function onClick(ev){
     render();
   } else if(action==="delete"){
     if(confirm("¿Eliminar esta actividad?")){
+      var gone = STATE.entries.find(function(e){return e.id===id;});
+      if(gone && STATE.activityNames.indexOf(gone.name)<0){ STATE.activityNames.push(gone.name); }
       STATE.entries = STATE.entries.filter(function(e){return e.id!==id;});
       delete STATE.done[id];
       editingId = null;
