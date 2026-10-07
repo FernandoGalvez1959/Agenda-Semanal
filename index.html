@@ -372,6 +372,7 @@ function normalizeState(s){
   if(!s.studies) s.studies = [];
   if(!s.pages) s.pages = [];
   if(!s.activityNames) s.activityNames = [];
+  if(!s.hiddenCats) s.hiddenCats = [];
   if(!s.catColors || typeof s.catColors!=="object") s.catColors = {};
   if(!s.pageNotes || typeof s.pageNotes!=="object") s.pageNotes = {};
   if(typeof s.nextId !== "number") s.nextId = 1;
@@ -512,14 +513,14 @@ function hexToRgb(hex){
 }
 
 function allCategories(){
-  return BASE_CATS.concat(STATE.categories.map(function(c){
+  return BASE_CATS.filter(function(c){return STATE.hiddenCats.indexOf(c.key)<0;}).concat(STATE.categories.map(function(c){
     return {key:c.key, label:c.label, color:c.color, builtin:false};
   }));
 }
 
 function getCategory(key){
   var found = allCategories().find(function(c){return c.key===key;});
-  return found || BASE_CATS[0];
+  return found || allCategories()[0] || BASE_CATS[0];
 }
 
 var PALETTE = ['#2f5d5a','#3f5a78','#4a6fa5','#6b4570','#a3402f','#c0572b','#9a6a24','#b08d1a','#5a7d2a','#2e8b57','#8a8a8a','#232420'];
@@ -709,7 +710,7 @@ function renderAgenda(){
     html += '<div class="catrow"><select id="cat-pick" style="flex:1; font:inherit; padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)">';
     cats.forEach(function(k){ html += '<option value="'+k.key+'"'+(k.key===cur.key?' selected':'')+'>'+esc(k.label)+'</option>'; });
     html += '</select><span class="chip" style="'+catStyle(cur)+'">Color</span>';
-    if(!cur.builtin){ html += '<button type="button" class="catdel" data-action="delete-cat" data-cat="'+cur.key+'" aria-label="Eliminar categoría '+esc(cur.label)+'">🗑️</button>'; }
+    { html += '<button type="button" class="catdel" data-action="delete-cat" data-cat="'+cur.key+'" aria-label="Eliminar categoría '+esc(cur.label)+'">🗑️</button>'; }
     html += '</div><div class="swatches">';
     PALETTE.forEach(function(col){
       html += '<button type="button" class="swatch'+(col===curCol?' sel':'')+'" style="background:'+col+'" data-action="set-cat-color" data-cat="'+cur.key+'" data-color="'+col+'" aria-label="Color '+col+'"></button>';
@@ -1107,8 +1108,12 @@ function onClick(ev){
     }
   } else if(action==="delete-cat"){
     var key = btn.getAttribute("data-cat");
-    if(confirm("¿Eliminar esta categoría? Las actividades que la usan pasarán a mostrarse como Deporte.")){
+    if(allCategories().length<=1){
+      alert("Tiene que quedar al menos una categoría.");
+    } else if(confirm("¿Eliminar esta categoría? Las actividades que la usan pasarán a mostrarse con otra categoría.")){
       STATE.categories = STATE.categories.filter(function(c){return c.key!==key;});
+      if(BASE_CATS.some(function(c){return c.key===key;}) && STATE.hiddenCats.indexOf(key)<0){ STATE.hiddenCats.push(key); }
+      catPanelSel = null;
       persist();
     }
   } else if(action==="note-write"){
