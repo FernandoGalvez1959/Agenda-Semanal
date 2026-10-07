@@ -238,6 +238,7 @@ footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-heigh
 .noteentry{display:block}
 .notehead{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px}
 .bullet{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; vertical-align:baseline}
+.strike{text-decoration:line-through !important}
 .grouphead{font-size:.95rem; font-weight:600; color:var(--ink-soft); margin:16px 0 8px}
 .syncnote{font-size:.72rem; color:var(--ink-soft); margin-top:6px}
 .syncbadge{display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--ink-soft); margin-top:6px}
@@ -503,7 +504,7 @@ function noteLinesHtml(text){
 function mdBold(str){
   return esc(str)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/~~(.+?)~~/g, "<s>$1</s>");
+    .replace(/~~([\s\S]+?)~~/g, '<span class="strike" style="text-decoration:line-through; text-decoration-thickness:2px">$1</span>');
 }
 
 function hexToRgb(hex){
