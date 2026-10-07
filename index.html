@@ -226,10 +226,10 @@ header.top p{margin:.35rem 0 0; color:var(--ink-soft); font-size:.92rem}
 footer.note{margin-top:26px; font-size:.78rem; color:var(--ink-soft); line-height:1.5}
 .authwrap{min-height:40vh; display:flex; align-items:center; justify-content:center; padding-block:24px}
 .catblock{margin-bottom:14px}
-.swatches{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; align-items:center}
-.swatch{width:34px; height:34px; border-radius:50%; border:2px solid var(--surface); box-shadow:0 0 0 1px var(--line); cursor:pointer; padding:0}
+.swatches{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; align-items:center}
+.swatch{width:28px; height:28px; border-radius:50%; border:2px solid var(--surface); box-shadow:0 0 0 1px var(--line); cursor:pointer; padding:0}
 .swatch.sel{box-shadow:0 0 0 3px var(--ink)}
-.swatchpick{width:34px; height:34px; padding:0; border:1px solid var(--line); border-radius:50%; background:none; cursor:pointer}
+.swatchpick{width:28px; height:28px; padding:0; border:1px solid var(--line); border-radius:50%; background:none; cursor:pointer}
 .catrow{display:flex; align-items:center; gap:10px; margin-bottom:8px}
 .catrow input[type=color]{width:40px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2); cursor:pointer}
 .note-text.notelines{white-space:normal}
@@ -346,7 +346,7 @@ var BASE_CATS = [
 ];
 var VIEWS = [
   {key:"agenda", label:"Agenda"},
-  {key:"notas", label:"Notas"},
+  {key:"notas", label:"Pendientes"},
   {key:"paginas", label:"Páginas"},
   {key:"backup", label:"Copia"}
 ];
@@ -359,6 +359,7 @@ var noteMode = null; // null | "write" | "recording"
 var editingNoteId = null; // null, o el id de la nota que se está editando
 var studyMode = null; // null | "new" | number
 var currentPageId = null;
+var catPanelOpen = false, catPanelSel = null;
 
 var mediaRecorder = null, mediaStream = null, recordedChunks = [], recordingTimer = null, recordingSeconds = 0;
 
@@ -688,9 +689,9 @@ function renderAgenda(){
   }
 
   if(editingId===null && list.length>0){
-    html += '<div class="formcard" style="margin-top:14px"><h3>Copiar todas las actividades de '+dayLabel.toLowerCase()+' a otro día</h3><div class="formactions"><select id="copy-target" style="flex:1; font:inherit; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)">';
+    html += '<div class="formactions" style="margin-top:12px; flex-wrap:nowrap; align-items:center"><span style="font-size:.85rem; color:var(--ink-soft); white-space:nowrap">Copiar día a:</span><select id="copy-target" style="flex:1; min-width:0; font:inherit; padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)">';
     DAYS.forEach(function(d){ if(d.key!==selectedDay){ html += '<option value="'+d.key+'">'+d.label+'</option>'; } });
-    html += '</select><button type="button" class="btn soft" data-action="copy-day">📋 Copiar</button></div></div>';
+    html += '</select><button type="button" class="btn soft" data-action="copy-day" style="padding:8px 12px">📋</button></div>';
   }
 
   if(editingId==="new"){
@@ -699,23 +700,25 @@ function renderAgenda(){
     html += '<button type="button" class="addbtn" data-action="add">+ Añadir actividad a '+dayLabel.toLowerCase()+'</button>';
   }
 
-  html += '<div class="formcard"><h3>Categorías y colores</h3>';
-  allCategories().forEach(function(c){
-    var cur = catColorInput(c).toLowerCase();
-    html += '<div class="catblock"><div class="catrow"><span class="chip" style="'+catStyle(c)+'">'+esc(c.label)+'</span>';
-    if(!c.builtin){
-      html += ' <button type="button" class="catdel" data-action="delete-cat" data-cat="'+c.key+'" aria-label="Eliminar categoría '+esc(c.label)+'">×</button>';
-    }
+  html += '<button type="button" class="addbtn" data-action="toggle-cat-panel" style="margin-top:12px; padding:9px">🎨 Categorías y colores '+(catPanelOpen?'▴':'▾')+'</button>';
+  if(catPanelOpen){
+    var cats = allCategories();
+    var cur = cats.find(function(k){return k.key===catPanelSel;}) || cats[0];
+    var curCol = catColorInput(cur).toLowerCase();
+    html += '<div class="formcard" style="margin-top:8px; padding:12px">';
+    html += '<div class="catrow"><select id="cat-pick" style="flex:1; font:inherit; padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)">';
+    cats.forEach(function(k){ html += '<option value="'+k.key+'"'+(k.key===cur.key?' selected':'')+'>'+esc(k.label)+'</option>'; });
+    html += '</select><span class="chip" style="'+catStyle(cur)+'">Color</span>';
+    if(!cur.builtin){ html += '<button type="button" class="catdel" data-action="delete-cat" data-cat="'+cur.key+'" aria-label="Eliminar categoría '+esc(cur.label)+'">🗑️</button>'; }
     html += '</div><div class="swatches">';
     PALETTE.forEach(function(col){
-      html += '<button type="button" class="swatch'+(col===cur?' sel':'')+'" style="background:'+col+'" data-action="set-cat-color" data-cat="'+c.key+'" data-color="'+col+'" aria-label="Color '+col+' para '+esc(c.label)+'"></button>';
+      html += '<button type="button" class="swatch'+(col===curCol?' sel':'')+'" style="background:'+col+'" data-action="set-cat-color" data-cat="'+cur.key+'" data-color="'+col+'" aria-label="Color '+col+'"></button>';
     });
-    html += '<input type="color" class="swatchpick" data-catcolor="'+c.key+'" value="'+cur+'" title="Otro color" aria-label="Otro color para '+esc(c.label)+'">';
-    html += '</div></div>';
-  });
-  html += '<div class="catrow" style="margin-top:12px"><input type="text" id="newcat-name" maxlength="24" placeholder="Nueva categoría" style="flex:1; font:inherit; padding:9px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)"><input type="color" id="newcat-color" value="#4a6fa5"><button type="button" class="btn soft" data-action="add-cat">Añadir</button></div>';
-  html += '<p class="syncnote">Toca un círculo de color para cambiar el color de esa categoría (el último círculo abre más colores).</p>';
-  html += '</div>';
+    html += '<input type="color" class="swatchpick" data-catcolor="'+cur.key+'" value="'+curCol+'" title="Otro color" aria-label="Otro color">';
+    html += '</div>';
+    html += '<div class="catrow" style="margin-top:10px"><input type="text" id="newcat-name" maxlength="24" placeholder="Nueva categoría" style="flex:1; min-width:0; font:inherit; padding:8px 10px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink)"><input type="color" id="newcat-color" value="#4a6fa5" style="width:36px; height:34px; padding:2px; border:1px solid var(--line); border-radius:8px; background:var(--surface-2)"><button type="button" class="btn soft" data-action="add-cat" style="padding:8px 12px">Añadir</button></div>';
+    html += '</div>';
+  }
 
   html += '<footer class="note">Toca el círculo para marcar una actividad como hecha.</footer>';
 
@@ -791,7 +794,7 @@ function renderNotesListHtml(notesArr){
 }
 
 function renderNotas(){
-  var html = '<h2 class="sectiontitle">Notas</h2>';
+  var html = '<h2 class="sectiontitle">Pendientes</h2>';
   html += renderNoteControls(STATE.notes);
   html += renderNotesListHtml(STATE.notes);
   return html;
@@ -1238,6 +1241,9 @@ function onClick(ev){
     var su = STATE.categories.find(function(c){return c.key===sk;});
     if(su){ su.color = sc; } else { STATE.catColors[sk] = sc; }
     persist();
+  } else if(action==="toggle-cat-panel"){
+    catPanelOpen = !catPanelOpen;
+    render();
   } else if(action==="add-cat"){
     var cn = document.getElementById("newcat-name").value.trim();
     var cc = document.getElementById("newcat-color").value || "#4a6fa5";
@@ -1274,7 +1280,10 @@ function moveNoteBy(id, delta){
 }
 
 function onChange(ev){
-  if(ev.target && ev.target.getAttribute && ev.target.getAttribute("data-catcolor")){
+  if(ev.target && ev.target.id==="cat-pick"){
+    catPanelSel = ev.target.value;
+    render();
+  } else if(ev.target && ev.target.getAttribute && ev.target.getAttribute("data-catcolor")){
     var ck = ev.target.getAttribute("data-catcolor"), cv = ev.target.value;
     var cu = STATE.categories.find(function(c){return c.key===ck;});
     if(cu){ cu.color = cv; } else { STATE.catColors[ck] = cv; }
