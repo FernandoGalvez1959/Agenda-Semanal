@@ -581,7 +581,7 @@ var DEFAULT_ACTIVITIES = ["Gimnasia en casa","Estudio de idiomas","Tiro con arco
 
 function activityNames(){
   var seen = {}, out = [];
-  DEFAULT_ACTIVITIES.concat(STATE.activityNames, STATE.entries.map(function(e){return e.name;})).forEach(function(n){
+  DEFAULT_ACTIVITIES.concat(STATE.activityNames, STATE.entries.filter(function(e){return e.day!=="extra";}).map(function(e){return e.name;})).forEach(function(n){
     if(n && !seen[n] && STATE.hiddenActivities.indexOf(n)<0){ seen[n]=true; out.push(n); }
   });
   return out.sort(function(a,b){ return a.localeCompare(b,"es"); });
@@ -615,7 +615,7 @@ function renderEntryForm(editing){
   anames.forEach(function(n){ h += '<option value="'+esc(n)+'"'+(editing && n===f.name?' selected':'')+'>'+esc(n)+'</option>'; });
   h += '<option value="__new__">+ Nueva actividad…</option>';
   h += '</select><button type="button" class="btn danger" data-action="remove-activity" title="Quitar esta actividad de la lista" style="padding:8px 12px">🗑️</button></div></div>';
-  h += '<div class="field" id="new-name-field" hidden><label for="f-newname">Nombre de la nueva actividad</label><input type="text" id="f-newname" maxlength="60" placeholder="Ej. Meditación"></div>';
+  h += '<div class="field" id="new-name-field" hidden><label for="f-newname">Nombre de la nueva actividad</label><input type="text" id="f-newname" maxlength="60" placeholder="Ej. Meditación"><small style="color:var(--ink-soft)">Si el día es Extra, este nombre no se guarda en la lista de actividades.</small></div>';
   h += '<div class="field-row">';
   h += '<div class="field"><label for="f-day">Día</label><select id="f-day">';
   DAYS.forEach(function(d){ h += '<option value="'+d.key+'"'+(d.key===f.day?' selected':'')+'>'+d.label+'</option>'; });
@@ -941,12 +941,12 @@ function saveForm(){
   if(name === "__new__"){
     name = document.getElementById("f-newname").value.trim();
     if(!name){ alert("Escribe el nombre de la nueva actividad."); return; }
-    if(STATE.activityNames.indexOf(name)<0){ STATE.activityNames.push(name); }
-    STATE.hiddenActivities = STATE.hiddenActivities.filter(function(x){return x!==name;});
   }
   name = name.trim();
-  if(name && STATE.activityNames.indexOf(name)<0){ STATE.activityNames.push(name); }
   var day = document.getElementById("f-day").value;
+  // En el día Extra los nombres manuales NO se guardan en la lista de actividades
+  if(name && day!=="extra" && STATE.activityNames.indexOf(name)<0){ STATE.activityNames.push(name); }
+  if(name && day!=="extra"){ STATE.hiddenActivities = STATE.hiddenActivities.filter(function(x){return x!==name;}); }
   var cat = document.getElementById("f-cat").value;
   var start = document.getElementById("f-start").value || "09:00";
   var dur = parseFloat(document.getElementById("f-dur").value);
@@ -1136,7 +1136,7 @@ function onClick(ev){
   } else if(action==="delete"){
     if(confirm("¿Eliminar esta actividad?")){
       var gone = STATE.entries.find(function(e){return e.id===id;});
-      if(gone && STATE.activityNames.indexOf(gone.name)<0){ STATE.activityNames.push(gone.name); }
+      if(gone && gone.day!=="extra" && STATE.activityNames.indexOf(gone.name)<0){ STATE.activityNames.push(gone.name); }
       STATE.entries = STATE.entries.filter(function(e){return e.id!==id;});
       delete STATE.done[id];
       editingId = null;
