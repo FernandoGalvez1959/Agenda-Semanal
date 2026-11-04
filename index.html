@@ -974,8 +974,7 @@ function saveNoteText(){
     if(n){
       n.title = title;
       if(n.type==="text"){
-        if(!text) return;
-        n.text = text;
+        n.text = text; // se permite dejarlo vacío: la nota se conserva
       }
     }
     editingNoteId = null;
@@ -984,7 +983,7 @@ function saveNoteText(){
     return;
   }
 
-  if(!text) return;
+  if(!text && !title) return;
   currentNotesArray().unshift({id:STATE.nextId++, type:"text", title:title, text:text, createdAt:new Date().toISOString()});
   noteMode = null;
   persist();
