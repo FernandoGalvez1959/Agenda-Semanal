@@ -1380,11 +1380,30 @@ function handleRestoreFile(file){
   reader.readAsText(file);
 }
 
+var autoBackupChecked = false;
+var AUTO_BACKUP_KEY = "agenda-ultima-copia";
+// Al abrir la app, si han pasado 2 días o más desde la última copia, descarga una automáticamente.
+function autoBackupIfDue(){
+  if(autoBackupChecked) return;
+  autoBackupChecked = true;
+  try{
+    var hasData = STATE && ((STATE.entries && STATE.entries.length) || (STATE.notes && STATE.notes.length) || (STATE.pageNotes && Object.keys(STATE.pageNotes).length));
+    if(!hasData) return;
+    var last = parseInt(localStorage.getItem(AUTO_BACKUP_KEY) || "0", 10);
+    var TWO_DAYS = 2*24*60*60*1000;
+    if(!last || (Date.now()-last) >= TWO_DAYS){
+      localStorage.setItem(AUTO_BACKUP_KEY, String(Date.now()));
+      setTimeout(exportBackup, 1500);
+    }
+  }catch(e){}
+}
+
 function finishStateLoad(){
   var changed = ensureCurrentWeek();
   saveCachedState();
   render();
   if(changed){ persist(); }
+  autoBackupIfDue();
 }
 
 function attachSharedListener(){
