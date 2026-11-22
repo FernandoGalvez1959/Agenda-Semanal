@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grabar nota de voz</title>
+<link rel="manifest" href="manifest-grabar.json">
+<link rel="icon" href="grabar-192.png">
+<link rel="apple-touch-icon" href="grabar-192.png">
+<meta name="theme-color" content="#c0392b">
+<style>
+body{margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:24px; box-sizing:border-box; background:#c0392b; color:#fff; font-family:system-ui,sans-serif; text-align:center}
+a.btn{display:inline-block; background:#fff; color:#c0392b; font-size:1.4rem; font-weight:700; padding:22px 34px; border-radius:20px; text-decoration:none}
+p{max-width:30em; line-height:1.5; margin:0}
+</style>
+</head>
+<body>
+<div style="font-size:4rem">🎙️</div>
+<a class="btn" href="index.html?grabar=1">Grabar nota de voz</a>
+<p id="help">Para tener este botón en la pantalla de inicio, abre el menú del navegador (⋮) y elige «Instalar aplicación» o «Añadir a la pantalla de inicio».</p>
+<script>
+// Si se abre desde el icono instalado, va directo a grabar; en el navegador muestra el botón para poder instalarlo.
+if(window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone){
+  location.replace("index.html?grabar=1");
+}
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(function(){}); }
+</script>
+</body>
+</html>

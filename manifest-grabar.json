@@ -1,0 +1,16 @@
+{
+  "id": "./grabar.html",
+  "name": "Grabar nota de voz",
+  "short_name": "Grabar nota",
+  "description": "Abre la agenda y empieza a grabar una nota de voz",
+  "start_url": "./grabar.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#c0392b",
+  "theme_color": "#c0392b",
+  "icons": [
+    { "src": "grabar-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "grabar-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
