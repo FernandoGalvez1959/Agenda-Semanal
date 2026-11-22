@@ -1404,6 +1404,22 @@ function finishStateLoad(){
   render();
   if(changed){ persist(); }
   autoBackupIfDue();
+  quickRecordIfRequested();
+}
+
+// Acceso directo "Grabar nota de voz": abre la app en Pendientes y empieza a grabar.
+var quickRecordDone = false;
+function quickRecordIfRequested(){
+  if(quickRecordDone) return;
+  quickRecordDone = true;
+  var wanted = false;
+  try{ wanted = /[?&]grabar=1/.test(location.search); }catch(e){}
+  if(!wanted) return;
+  try{ history.replaceState(null, "", location.pathname); }catch(e){}
+  currentView = "notas";
+  editingNoteId = null;
+  render();
+  startRecording();
 }
 
 function attachSharedListener(){
